@@ -83,7 +83,8 @@ describe Randomized do
 
   describe "#character" do
     subject { described_class.character }
-    stress_it "returns a string of length 1" do
+    it_behaves_like String
+    stress_it "has length == 1" do
       expect(subject.length).to(be == 1)
     end
   end
