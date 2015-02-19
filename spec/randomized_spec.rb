@@ -8,7 +8,7 @@ end
 describe Randomized do
   describe "#text" do
     context "with no arguments" do
-      it "should raise ArgumentError" do
+      stress_it "should raise ArgumentError" do
         expect { subject.text }.to(raise_error(ArgumentError))
       end
     end
@@ -61,13 +61,13 @@ describe Randomized do
     end
   end
 
-  shared_examples_for "random numbers within a range" do
+  shared_examples_for "numeric type within expected range" do |type|
     let(:start) { Randomized.integer(-100000 .. 100000) }
     let(:length) { Randomized.integer(1 .. 100000) }
     let(:range) { start .. (start + length) }
 
-    stress_it "should be a Numeric" do
-      expect(subject).to(be_a(Numeric))
+    stress_it "should be a #{type}" do
+      expect(subject).to(be_a(type))
     end
 
     stress_it "should be within the bounds of the given range" do
@@ -76,20 +76,13 @@ describe Randomized do
   end
 
   describe "#integer" do
-    it_behaves_like "random numbers within a range" do
+    it_behaves_like "numeric type within expected range", Fixnum do
       subject { Randomized.integer(range) }
-      stress_it "is a Fixnum" do
-        expect(subject).to(be_a(Fixnum))
-      end
     end
   end
   describe "#number" do
-    it_behaves_like "random numbers within a range" do
+    it_behaves_like "numeric type within expected range", Float do
       subject { Randomized.number(range) }
-
-      stress_it "is a Float" do
-        expect(subject).to(be_a(Float))
-      end
     end
   end
 end 
