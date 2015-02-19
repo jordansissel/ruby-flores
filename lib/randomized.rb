@@ -18,18 +18,23 @@
 
 # A collection of methods intended for use in randomized testing.
 module Randomized
+
   # A selection of UTF-8 characters
+  #
+  # I'd love to generate this, but I don't yet know enough about how unicode
+  # blocks are allocated to do that. For now, hardcode a set of possible
+  # characters.
   CHARACTERS = [
     # Basic Latin
     *(32..126).map(&:chr),
 
-    # CJK Unified Ideographs Extension A
+    # hand-selected CJK Unified Ideographs Extension A
     "㐤", "㐨", "㐻", "㑐",
 
-    # Hebrew
+    # hand-selected Hebrew
     "א", "ב", "ג", "ד", "ה",
 
-    # Cyrillic
+    # hand-selected Cyrillic
     "Є", "Б", "Р", "н", "я"
   ]
 
