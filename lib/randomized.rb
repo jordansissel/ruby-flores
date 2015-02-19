@@ -18,6 +18,21 @@
 
 # A collection of methods intended for use in randomized testing.
 module Randomized
+  # A selection of UTF-8 characters
+  CHARACTERS = [
+    # Basic Latin
+    *(32..126).map(&:chr),
+
+    # CJK Unified Ideographs Extension A
+    "㐤", "㐨", "㐻", "㑐",
+
+    # Hebrew
+    "א", "ב", "ג", "ד", "ה",
+
+    # Cyrillic
+    "Є", "Б", "Р", "н", "я"
+  ]
+
   # Generates text with random characters of a given length (or within a length range)
   #
   # * The length can be a number or a range `x..y`. If a range, it must be ascending (x < y)
@@ -27,6 +42,7 @@ module Randomized
   # @return [String] the 
   def self.text(length)
     return text_range(length) if length.is_a?(Range)
+
     raise ArgumentError, "A negative length is not permitted, I received #{length}" if length < 0
     length.times.collect { character }.join
   end # def text
@@ -41,14 +57,7 @@ module Randomized
   #
   # @return [String]
   def self.character
-    # TODO(sissel): Add support to generate valid UTF-8. I started reading
-    # Unicode 7 (http://www.unicode.org/versions/Unicode7.0.0/) and after much
-    # reading, I realized I wasn't in my house anymore but had somehow lost
-    # track of time and was alone in a field. Civilization had fallen centuries
-    # ago. :P
-    
-    # Until UTF-8 is supported, just return a random lower ASCII character
-    integer(32..127).chr
+    return CHARACTERS[integer(0...CHARACTERS.length)]
   end # def character
 
   # Return a random integer value within a given range.
