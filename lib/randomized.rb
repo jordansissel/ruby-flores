@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # encoding: utf-8
+
 # A collection of methods intended for use in randomized testing.
 module Randomized
   # Generates text with random characters of a given length (or within a length range)
