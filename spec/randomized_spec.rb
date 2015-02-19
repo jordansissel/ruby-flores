@@ -80,9 +80,26 @@ describe Randomized do
       subject { Randomized.integer(range) }
     end
   end
+
   describe "#number" do
     it_behaves_like "numeric type within expected range", Float do
       subject { Randomized.number(range) }
     end
+  end
+
+  describe "#iterations" do
+    let(:start) { Randomized.integer(1 .. 100000) }
+    let(:length) { Randomized.integer(1 .. 100000) }
+    let(:range) { start .. (start + length) }
+    subject { Randomized.iterations(range) }
+
+    stress_it "should return an Enumerable" do
+      expect(subject).to(be_a(Enumerable))
+    end
+
+    stress_it "should have a size within the expected range" do
+      expect(range).to(include(subject.size))
+    end
+
   end
 end 
