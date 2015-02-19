@@ -111,7 +111,7 @@ module RSpec::StressIt
     end
 
     def percent_s(count)
-      return sprintf("%.2f%%", percent(count) * 100)
+      return format("%.2f%%", percent(count) * 100)
     end
 
     def to_s # rubocop:disable Metrics/AbcSize
