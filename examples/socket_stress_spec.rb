@@ -13,7 +13,7 @@ describe TCPServer do
     proc do |m, *args|
       begin
         m.call(*args)
-      rescue Errno::EADDRINUSE
+      rescue Errno::EADDRINUSE # rubocop:disable Lint/HandleExceptions
         # ignore
       end
     end

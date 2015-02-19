@@ -1,6 +1,15 @@
 # encoding: utf-8
 require "rspec/core"
 
+# RSpec helpers for stress testing examples
+#
+# Setting it up in rspec:
+#
+#     RSpec.configure do |c|
+#       c.extend RSpec::StressIt
+#     end
+#
+# TODO(sissel): Show an example of stress_it and analyze_it
 module RSpec::StressIt
   DEFAULT_ITERATIONS = 1..5000
 
@@ -10,11 +19,11 @@ module RSpec::StressIt
   # of APIs to help find edge cases and weird behavior.
   #
   # The default number of iterations is randomly selected between 1 and 1000 inclusive
-  def stress_it(name, options={}, &block)
-    __iterations = Randomized.iterations(options.delete(:stress_iterations) || DEFAULT_ITERATIONS)
+  def stress_it(name, options = {}, &block)
+    stress__iterations = Randomized.iterations(options.delete(:stress_iterations) || DEFAULT_ITERATIONS)
     it(name, options) do
       # Run the block of an example many times
-      __iterations.each do |i|
+      stress__iterations.each do
         # Run the block within 'it' scope
         instance_eval(&block)
 
@@ -34,10 +43,10 @@ module RSpec::StressIt
   #     it "should be less than 100" do
   #       expect(number).to(be < 100)
   #     end
-  def stress_it2(name, options={}, &block)
-    __iterations = Randomized.iterations(options.delete(:stress_iterations) || DEFAULT_ITERATIONS)
-    __iterations.each do |i|
-      it(example_name + " [#{i}]", *args) do
+  def stress_it2(name, options = {}, &block)
+    stress__iterations = Randomized.iterations(options.delete(:stress_iterations) || DEFAULT_ITERATIONS)
+    stress__iterations.each do |i|
+      it(name + " [#{i}]", *args) do
         instance_eval(&block)
       end # it ...
     end # .times
@@ -57,18 +66,17 @@ module RSpec::StressIt
   #     end
   #
   # Example report:
-  def analyze_it(name, variables, &block)
+  def analyze_it(name, variables, &block) # rubocop:disable Metrics/AbcSize
     it(name) do
-      results = Hash.new { |h,k| h[k] = [] }
-      iterations = Randomized.iterations(DEFAULT_ITERATIONS)
-      iterations.each do |i|
+      results = Hash.new { |h, k| h[k] = [] }
+      Randomized.iterations(DEFAULT_ITERATIONS).each do
         state = Hash[variables.collect { |l| [l, __send__(l)] }]
         begin
           instance_eval(&block)
           results[:success] << [state, nil]
         rescue => e
           results[e.class] << [state, e]
-        rescue Exception => e
+        rescue Exception => e # rubocop:disable Lint/RescueException
           results[e.class] << [state, e]
         end
 
@@ -76,19 +84,18 @@ module RSpec::StressIt
         __memoized.clear
       end
 
-      if results[:success] != iterations
-        raise Analysis.new(results)
-      end
+      raise StandardError, Analysis.new(results) if results[:success] != iterations
     end
   end
 
+  # A formatter to show analysis of an `analyze_it` example. 
   class Analysis < StandardError
     def initialize(results)
       @results = results
     end
 
     def total
-      @results.reduce(0) { |m, (k,v)| m + v.length }
+      @results.reduce(0) { |m, (_, v)| m + v.length }
     end
 
     def success_count
@@ -107,13 +114,12 @@ module RSpec::StressIt
       return sprintf("%.2f%%", percent(count) * 100)
     end
 
-    def to_s
+    def to_s # rubocop:disable Metrics/AbcSize
       # This method is crazy complex for a formatter. Should refactor this significantly.
       report = ["#{percent_s(success_count)} tests successful of #{total} tests"]
       if success_count < total
         report << "Failure analysis:"
-        report += @results.sort_by { |k,v| -v.length }.reject { |k,v| k == :success }.collect do |k, v|
-          sample = v.sample(5).collect { |v| v.first }.join(", ")
+        report += @results.sort_by { |_, v| -v.length }.reject { |k, _| k == :success }.collect do |k, v|
           [ 
             "  #{percent_s(v.length)} -> [#{v.length}] #{k}",
             "    Sample exception:",

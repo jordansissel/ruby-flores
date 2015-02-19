@@ -8,17 +8,16 @@ module Randomized
   # @param length [Fixnum or Range] the length of text to generate
   # @return [String] the 
   def self.text(length)
-    if length.is_a?(Range)
-      raise ArgumentError, "Requires ascending range, you gave #{length}." if length.end < length.begin
-      raise ArgumentError, "A negative length is not permitted, I received range #{length}" if length.begin < 0
-
-      length = integer(length)
-    else
-      raise ArgumentError, "A negative length is not permitted, I received #{length}" if length < 0
-    end
-
+    return text_range(length) if length.is_a?(Range)
+    raise ArgumentError, "A negative length is not permitted, I received #{length}" if length < 0
     length.times.collect { character }.join
   end # def text
+
+  def self.text_range(range)
+    raise ArgumentError, "Requires ascending range, you gave #{range}." if range.end < range.begin
+    raise ArgumentError, "A negative range values are not permitted, I received range #{range}" if range.begin < 0
+    text(integer(range))
+  end
 
   # Generates a random character (A string of length 1)
   #

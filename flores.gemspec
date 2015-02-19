@@ -1,5 +1,5 @@
 Gem::Specification.new do |spec|
-  files = %x{git ls-files}.split("\n")
+  files = %x(git ls-files).split("\n")
 
   spec.name = "flores"
   spec.version = "0.0.1"
@@ -20,4 +20,3 @@ Gem::Specification.new do |spec|
   spec.authors = ["Jordan Sissel"]
   spec.email = ["jls@semicomplete.com"]
 end
-

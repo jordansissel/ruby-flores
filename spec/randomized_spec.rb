@@ -38,7 +38,7 @@ describe Randomized do
       subject { described_class.text(range) }
 
       context "that is ascending" do
-        let(:range) { start .. (start + length) }
+        let(:range) { start..(start + length) }
         stress_it "should give a string within that length range" do
           expect(subject).to(be_a(String))
           expect(range).to(include(subject.length))
@@ -46,7 +46,7 @@ describe Randomized do
       end
 
       context "that is descending" do
-        let(:range) { start .. (start - length) }
+        let(:range) { start..(start - length) }
         stress_it "should raise ArgumentError" do
           expect { subject }.to(raise_error(ArgumentError))
         end
@@ -62,9 +62,9 @@ describe Randomized do
   end
 
   shared_examples_for "numeric type within expected range" do |type|
-    let(:start) { Randomized.integer(-100000 .. 100000) }
-    let(:length) { Randomized.integer(1 .. 100000) }
-    let(:range) { start .. (start + length) }
+    let(:start) { Randomized.integer(-100_000..100_000) }
+    let(:length) { Randomized.integer(1..100_000) }
+    let(:range) { start..(start + length) }
 
     stress_it "should be a #{type}" do
       expect(subject).to(be_a(type))
@@ -88,9 +88,9 @@ describe Randomized do
   end
 
   describe "#iterations" do
-    let(:start) { Randomized.integer(1 .. 100000) }
-    let(:length) { Randomized.integer(1 .. 100000) }
-    let(:range) { start .. (start + length) }
+    let(:start) { Randomized.integer(1..100_000) }
+    let(:length) { Randomized.integer(1..100_000) }
+    let(:range) { start..(start + length) }
     subject { Randomized.iterations(range) }
 
     stress_it "should return an Enumerable" do
@@ -100,6 +100,5 @@ describe Randomized do
     stress_it "should have a size within the expected range" do
       expect(range).to(include(subject.size))
     end
-
   end
 end 

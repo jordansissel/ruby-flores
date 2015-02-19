@@ -6,6 +6,10 @@ RSpec.configure do |c|
   c.extend RSpec::StressIt
 end
 
+# A factory for encapsulating behavior of a tcp server and client for the
+# purposes of testing.
+#
+# This is probably not really a "factory" in a purist-sense, but whatever.
 class TCPIntegrationTestFactory
   def initialize(port)
     @listener = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
@@ -33,7 +37,6 @@ class TCPIntegrationTestFactory
 
     @client.syswrite(text)
     @client.close
-    #expect(client.syswrite(text)).to(be == text.bytesize)
     server.read
   ensure
     @client.close unless @client.closed?
@@ -45,26 +48,6 @@ describe "TCPServer+TCPSocket" do
   let(:port) { Randomized.number(1024..65535) }
   let(:text) { Randomized.text(1..10000) }
   subject { TCPIntegrationTestFactory.new(port) }
-
-  #describe "using before/after and stress_it2" do
-    #before do
-      #begin
-        #subject.setup
-      #rescue Errno::EADDRINUSE
-        ## We chose a random port that was already in use, let's skip this test.
-        #skip("Port #{port} is in use by another process, skipping")
-      #end
-    #end
-
-    #after do
-      #subject.teardown
-    #end
-
-    #stress_it2 "should send data correctly" do
-      #received = subject.send_and_receive(text)
-      #expect(received).to(be == text)
-    #end
-  #end
   
   describe "using stress_it" do
     stress_it "should send data correctly" do
