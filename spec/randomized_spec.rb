@@ -22,6 +22,15 @@ RSpec.configure do |c|
   c.extend RSpec::StressIt
 end
 
+shared_examples_for String do
+  stress_it "should be a String" do
+    expect(subject).to(be_a(String))
+  end
+  stress_it "have valid encoding" do
+    expect(subject).to(be_valid_encoding)
+  end
+end
+
 describe Randomized do
   describe "#text" do
     context "with no arguments" do
@@ -35,8 +44,8 @@ describe Randomized do
 
       context "that is positive" do
         let(:length) { rand(1..1000) }
-        stress_it "should give a string with that length" do
-          expect(subject).to(be_a(String))
+        it_behaves_like String
+        stress_it "has correct length" do
           expect(subject.length).to(eq(length))
         end
       end
@@ -56,6 +65,7 @@ describe Randomized do
 
       context "that is ascending" do
         let(:range) { start..(start + length) }
+        it_behaves_like String
         stress_it "should give a string within that length range" do
           expect(subject).to(be_a(String))
           expect(range).to(include(subject.length))
