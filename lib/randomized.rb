@@ -94,4 +94,4 @@ module Randomized
       integer(range).times
     end
   end # def iterations
-end
+end # module Randomized
