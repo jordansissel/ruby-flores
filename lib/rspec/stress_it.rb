@@ -102,17 +102,17 @@ module RSpec::StressIt
 
       raise StandardError, Analysis.new(results) if results[:success] != iterations
     end
-  end
+  end # def analyze_it
 
   # A formatter to show analysis of an `analyze_it` example. 
   class Analysis < StandardError
     def initialize(results)
       @results = results
-    end
+    end # def initialize
 
     def total
       @results.reduce(0) { |m, (_, v)| m + v.length }
-    end
+    end # def total
 
     def success_count
       if @results.include?(:success)
@@ -120,15 +120,15 @@ module RSpec::StressIt
       else
         0
       end
-    end
+    end # def success_count
 
     def percent(count)
       return (count + 0.0) / total
-    end
+    end # def percent
 
     def percent_s(count)
       return format("%.2f%%", percent(count) * 100)
-    end
+    end # def percent_s
 
     def to_s # rubocop:disable Metrics/AbcSize
       # This method is crazy complex for a formatter. Should refactor this significantly.
@@ -146,6 +146,6 @@ module RSpec::StressIt
         end.flatten
       end
       report.join("\n")
-    end
-  end
+    end # def to_s
+  end # class Analysis
 end # module RSpec::StressIt
