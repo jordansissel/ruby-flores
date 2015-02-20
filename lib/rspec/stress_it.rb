@@ -136,10 +136,11 @@ module RSpec::StressIt
       if success_count < total
         report << "Failure analysis:"
         report += @results.sort_by { |_, v| -v.length }.reject { |k, _| k == :success }.collect do |k, v|
+          sample = v.sample(1)
           [ 
             "  #{percent_s(v.length)} -> [#{v.length}] #{k}",
-            "    Sample exception:",
-            v.sample(1).first[1].to_s.gsub(/^/, "      "),
+            "    Sample exception for state #{sample.first[0]}",
+            sample.first[1].to_s.gsub(/^/, "      "),
             "    Samples causing #{k}:",
             *v.sample(5).collect { |state, _exception| "      #{state}" }
           ]
