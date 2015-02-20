@@ -89,7 +89,7 @@ describe Randomized do
     end
   end
 
-  shared_examples_for "numeric type within expected range" do |type|
+  shared_examples_for Numeric do |type|
     let(:start) { Randomized.integer(-100_000..100_000) }
     let(:length) { Randomized.integer(1..100_000) }
     let(:range) { start..(start + length) }
@@ -104,13 +104,13 @@ describe Randomized do
   end
 
   describe "#integer" do
-    it_behaves_like "numeric type within expected range", Fixnum do
+    it_behaves_like Numeric, Fixnum do
       subject { Randomized.integer(range) }
     end
   end
 
   describe "#number" do
-    it_behaves_like "numeric type within expected range", Float do
+    it_behaves_like Numeric, Float do
       subject { Randomized.number(range) }
     end
   end
