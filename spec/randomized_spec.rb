@@ -22,11 +22,11 @@ RSpec.configure do |c|
   c.extend RSpec::StressIt
 end
 
-shared_examples_for String do
-  stress_it "should be a String" do
+shared_examples_for String do |variables|
+  analyze_it "should be a String", variables do
     expect(subject).to(be_a(String))
   end
-  stress_it "have valid encoding" do
+  analyze_it "have valid encoding", variables do
     expect(subject).to(be_valid_encoding)
   end
 end
@@ -44,15 +44,15 @@ describe Randomized do
 
       context "that is positive" do
         let(:length) { rand(1..1000) }
-        it_behaves_like String
-        stress_it "has correct length" do
+        it_behaves_like String, [:length]
+        analyze_it "has correct length", [:length] do
           expect(subject.length).to(eq(length))
         end
       end
 
       context "that is negative" do
         let(:length) { -1 * rand(1..1000) }
-        stress_it "should raise ArgumentError" do
+        analyze_it "should raise ArgumentError", [:length] do
           expect { subject }.to(raise_error(ArgumentError))
         end
       end
@@ -65,8 +65,8 @@ describe Randomized do
 
       context "that is ascending" do
         let(:range) { start..(start + length) }
-        it_behaves_like String
-        stress_it "should give a string within that length range" do
+        it_behaves_like String, [:range]
+        analyze_it "should give a string within that length range", [:range] do
           expect(subject).to(be_a(String))
           expect(range).to(include(subject.length))
         end
@@ -74,7 +74,7 @@ describe Randomized do
 
       context "that is descending" do
         let(:range) { start..(start - length) }
-        stress_it "should raise ArgumentError" do
+        analyze_it "should raise ArgumentError", [:range] do
           expect { subject }.to(raise_error(ArgumentError))
         end
       end
@@ -83,8 +83,8 @@ describe Randomized do
 
   describe "#character" do
     subject { described_class.character }
-    it_behaves_like String
-    stress_it "has length == 1" do
+    it_behaves_like String, [:subject]
+    analyze_it "has length == 1", [:subject] do
       expect(subject.length).to(be == 1)
     end
   end
@@ -94,11 +94,11 @@ describe Randomized do
     let(:length) { Randomized.integer(1..100_000) }
     let(:range) { start..(start + length) }
 
-    stress_it "should be a #{type}" do
+    analyze_it "should be a #{type}", [:range] do
       expect(subject).to(be_a(type))
     end
 
-    stress_it "should be within the bounds of the given range" do
+    analyze_it "should be within the bounds of the given range", [:range] do
       expect(range).to(include(subject))
     end
   end
@@ -121,11 +121,11 @@ describe Randomized do
     let(:range) { start..(start + length) }
     subject { Randomized.iterations(range) }
 
-    stress_it "should return an Enumerable" do
+    analyze_it "should return an Enumerable", [:range] do
       expect(subject).to(be_a(Enumerable))
     end
 
-    stress_it "should have a size within the expected range" do
+    analyze_it "should have a size within the expected range", [:range] do
       expect(range).to(include(subject.size))
     end
   end
