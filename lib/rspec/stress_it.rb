@@ -100,7 +100,7 @@ module RSpec::StressIt
         __memoized.clear
       end
 
-      raise StandardError, Analysis.new(results) if results.any? { |k,v| k != :success }
+      raise StandardError, Analysis.new(results) if results.any? { |k, _| k != :success }
     end
   end # def analyze_it
 
@@ -130,23 +130,44 @@ module RSpec::StressIt
       return format("%.2f%%", percent(count) * 100)
     end # def percent_s
 
-    def to_s # rubocop:disable Metrics/AbcSize
+    def to_s
       # This method is crazy complex for a formatter. Should refactor this significantly.
       report = ["#{percent_s(success_count)} tests successful of #{total} tests"]
-      if success_count < total
-        report << "Failure analysis:"
-        report += @results.sort_by { |_, v| -v.length }.reject { |k, _| k == :success }.collect do |k, v|
-          sample = v.sample(1)
-          [ 
-            "  #{percent_s(v.length)} -> [#{v.length}] #{k}",
-            "    Sample exception for state #{sample.first[0]}",
-            sample.first[1].to_s.gsub(/^/, "      "),
-            "    Samples causing #{k}:",
-            *v.sample(5).collect { |state, _exception| "      #{state}" }
-          ]
-        end.flatten
-      end
+      report += failure_summary if success_count < total
       report.join("\n")
     end # def to_s
+
+    # TODO(sissel): All these report/summary/to_s things are an indication that the
+    # report formatting belongs in a separate class.
+    def failure_summary
+      report = ["Failure analysis:"]
+      report += @results.sort_by { |_, v| -v.length }.collect do |group, instances|
+        next if group == :success
+        error_report(group, instances)
+      end.reject(&:nil?).flatten
+      report
+    end # def failure_summary
+
+    def error_report(error, instances)
+      report = error_summary(error, instances)
+      report += error_sample_states(error, instances) if instances.size > 1
+      report
+    end # def error_report
+
+    def error_summary(error, instances)
+      sample = instances.sample(1)
+      [ 
+        "  #{percent_s(instances.length)} -> [#{instances.length}] #{error}",
+        "    Sample exception for #{sample.first[0]}",
+        sample.first[1].to_s.gsub(/^/, "      ")
+      ]
+    end # def error_summary
+
+    def error_sample_states(error, instances)
+      [ 
+        "    Samples causing #{error}:",
+        *instances.sample(5).collect { |state, _exception| "      #{state}" }
+      ]
+    end # def error_sample_states
   end # class Analysis
 end # module RSpec::StressIt
