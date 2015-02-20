@@ -41,14 +41,14 @@ describe TCPServer do
   end
 
   context "on privileged ports" do
-    let(:port) { Randomized.number(1..1023) }
+    let(:port) { Randomized.integer(1..1023) }
     stress_it "should raise Errno::EACCESS" do
       expect { socket.bind(sockaddr) }.to(raise_error(Errno::EACCES))
     end
   end
 
   context "on unprivileged ports" do
-    let(:port) { Randomized.number(1025..65535) }
+    let(:port) { Randomized.integer(1025..65535) }
     stress_it "should bind on a port" do
       # EADDRINUSE is expected since we are picking ports at random
       # Let's ignore this specific exception

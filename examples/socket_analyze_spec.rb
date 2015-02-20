@@ -29,7 +29,7 @@ describe TCPServer do
   after { socket.close }
 
   context "on a random port" do
-    let(:port) { Randomized.number(-100_000..100_000) }
+    let(:port) { Randomized.integer(-100_000..100_000) }
     analyze_it "should bind successfully", [:port] do
       socket.bind(sockaddr)
       expect(socket.local_address.ip_port).to(be == port)
