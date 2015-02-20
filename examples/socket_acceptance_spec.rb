@@ -62,12 +62,12 @@ class TCPIntegrationTestFactory
 end
 
 describe "TCPServer+TCPSocket" do
-  let(:port) { Randomized.number(1024..65535) }
-  let(:text) { Randomized.text(1..10000) }
+  let(:port) { Randomized.integer(1024..65535) }
+  let(:text) { Randomized.text(1..2000) }
   subject { TCPIntegrationTestFactory.new(port) }
   
   describe "using stress_it" do
-    stress_it "should send data correctly" do
+    analyze_it "should send data correctly", [:port, :text] do
       begin
         subject.setup
       rescue Errno::EADDRINUSE
