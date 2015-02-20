@@ -15,7 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # encoding: utf-8
-# encoding: utf-8
 require "rspec/core"
 
 # RSpec helpers for stress testing examples
