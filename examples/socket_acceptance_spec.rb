@@ -76,6 +76,7 @@ describe "TCPServer+TCPSocket" do
 
       begin
         received = subject.send_and_receive(text)
+        expect(received.encoding).to(be == text.encoding)
         expect(received).to(be == text)
       ensure
         subject.teardown
