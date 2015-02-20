@@ -18,7 +18,6 @@
 
 # A collection of methods intended for use in randomized testing.
 module Randomized
-
   # A selection of UTF-8 characters
   #
   # I'd love to generate this, but I don't yet know enough about how unicode
