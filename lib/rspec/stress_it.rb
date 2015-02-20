@@ -100,7 +100,7 @@ module RSpec::StressIt
         __memoized.clear
       end
 
-      raise StandardError, Analysis.new(results) if results[:success] != iterations
+      raise StandardError, Analysis.new(results) if results.any? { |k,v| k != :success }
     end
   end # def analyze_it
 
