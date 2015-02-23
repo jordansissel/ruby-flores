@@ -19,7 +19,7 @@
 module Flores::RSpec
   DEFAULT_ITERATIONS = 1..5000
 
-  def configure(rspec_configuration)
+  def self.configure(rspec_configuration)
     require "flores/rspec/stress"
     require "flores/rspec/analyze"
     rspec_configuration.extend(Flores::RSpec::Stress)
