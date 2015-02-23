@@ -15,27 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # encoding: utf-8
-require "randomized"
-require "socket"
-require "rspec/stress_it"
-
-RSpec.configure do |c|
-  c.extend RSpec::StressIt
-end
-
-describe TCPServer do
-  subject(:socket) { Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0) }
-  let(:sockaddr) { Socket.sockaddr_in(port, "127.0.0.1") }
-
-  context "on a random port" do
-    let(:port) { Randomized.integer(-100_000..100_000) }
-    analyze_it "should bind successfully", [:port] do
-      begin
-        socket.bind(sockaddr)
-        expect(socket.local_address.ip_port).to(be == port)
-      ensure
-        socket.close
-      end
-    end
-  end
+# :nodoc:
+module Flores
 end

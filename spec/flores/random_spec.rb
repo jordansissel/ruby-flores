@@ -15,11 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # encoding: utf-8
-require "randomized"
-require "rspec/stress_it"
+require "flores/random"
+require "flores/rspec"
 
 RSpec.configure do |c|
-  c.extend RSpec::StressIt
+  Flores::RSpec.configure(c)
 end
 
 shared_examples_for String do |variables|
@@ -31,7 +31,7 @@ shared_examples_for String do |variables|
   end
 end
 
-describe Randomized do
+describe Flores::Random do
   describe "#text" do
     context "with no arguments" do
       stress_it "should raise ArgumentError" do
@@ -90,8 +90,8 @@ describe Randomized do
   end
 
   shared_examples_for Numeric do |type|
-    let(:start) { Randomized.integer(-100_000..100_000) }
-    let(:length) { Randomized.integer(1..100_000) }
+    let(:start) { Flores::Random.integer(-100_000..100_000) }
+    let(:length) { Flores::Random.integer(1..100_000) }
     let(:range) { start..(start + length) }
 
     analyze_it "should be a #{type}", [:range] do
@@ -105,21 +105,21 @@ describe Randomized do
 
   describe "#integer" do
     it_behaves_like Numeric, Fixnum do
-      subject { Randomized.integer(range) }
+      subject { Flores::Random.integer(range) }
     end
   end
 
   describe "#number" do
     it_behaves_like Numeric, Float do
-      subject { Randomized.number(range) }
+      subject { Flores::Random.number(range) }
     end
   end
 
   describe "#iterations" do
-    let(:start) { Randomized.integer(1..100_000) }
-    let(:length) { Randomized.integer(1..100_000) }
+    let(:start) { Flores::Random.integer(1..100_000) }
+    let(:length) { Flores::Random.integer(1..100_000) }
     let(:range) { start..(start + length) }
-    subject { Randomized.iterations(range) }
+    subject { Flores::Random.iterations(range) }
 
     analyze_it "should return an Enumerable", [:range] do
       expect(subject).to(be_a(Enumerable))

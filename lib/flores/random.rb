@@ -16,8 +16,10 @@
 #
 # encoding: utf-8
 
+require "flores/namespace"
+
 # A collection of methods intended for use in randomized testing.
-module Randomized
+module Flores::Random
   # A selection of UTF-8 characters
   #
   # I'd love to generate this, but I don't yet know enough about how unicode
