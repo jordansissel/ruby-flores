@@ -15,11 +15,13 @@ Let's look at a sample situation. Ruby's TCPServer. Let's write a spec to cover 
 
 ```ruby
 describe TCPServer do
+  analyze_results # track the `let` and `subject` values in our tests.
+
   subject(:socket) { Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0) }
   let(:port) { 5000 }
   let(:sockaddr) { Socket.sockaddr_in(port, "127.0.0.1") }
 
-  after { socket.close}
+  after { socket.close }
 
   it "should bind successfully" do
     socket.bind(sockaddr)
