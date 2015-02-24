@@ -85,8 +85,8 @@ module Flores::RSpec::Analyze
     end # def total
 
     def success_count
-      if @results.include?(:success)
-        @results[:success].length
+      if @results.include?(:passed)
+        @results[:passed].length
       else
         0
       end
@@ -112,7 +112,8 @@ module Flores::RSpec::Analyze
     def failure_summary
       report = ["Failure analysis:"]
       report += @results.sort_by { |_, v| -v.length }.collect do |group, instances|
-        next if group == :success
+        next if group == :passed
+        next if group == :pending
         error_report(group, instances)
       end.reject(&:nil?).flatten
       report

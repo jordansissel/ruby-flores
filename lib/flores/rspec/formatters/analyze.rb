@@ -45,8 +45,10 @@ Flores::RSpec::Formatters::Analyze = Class.new(RSpec::Core::Formatters::BaseText
 
   def group_by_result(examples) # rubocop:disable Metrics/AbcSize
     examples.each_with_object(Hash.new { |h, k| h[k] = [] }) do |example, results|
-      if example.metadata[:execution_result].status == :passed
-        results[:success] << [example.metadata[:values], nil]
+      status = example.metadata[:execution_result].status
+      case status
+      when :passed, :pending
+        results[status] << [example.metadata[:values], nil]
       else
         exception = example.metadata[:execution_result].exception
         results[exception.class] << [example.metadata[:values], exception]
