@@ -92,6 +92,14 @@ module Flores::RSpec::Analyze
       end
     end # def success_count
 
+    def success_and_pending_count
+      count = 0
+      [:passed, :pending].each do |group|
+        count += @results[group].length
+      end
+      count
+    end # def success_count
+
     def percent(count)
       return (count + 0.0) / total
     end # def percent
@@ -102,8 +110,14 @@ module Flores::RSpec::Analyze
 
     def to_s
       # This method is crazy complex for a formatter. Should refactor this significantly.
-      report = ["#{percent_s(success_count)} tests successful of #{total} tests"]
-      report += failure_summary if success_count < total
+      report = []
+      if @results[:pending].any?
+        # We have pending examples, put a clear message.
+        report << "#{percent_s(success_and_pending_count)} (of #{total} total) tests are successful or pending"
+      else
+        report << "#{percent_s(success_count)} (of #{total} total) tests are successful"
+      end
+      report += failure_summary if success_and_pending_count < total
       report.join("\n")
     end # def to_s
 
