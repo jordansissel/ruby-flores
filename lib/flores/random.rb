@@ -45,7 +45,7 @@ module Flores::Random
   # * Negative lengths are not permitted and will raise an ArgumentError
   #
   # @param length [Fixnum or Range] the length of text to generate
-  # @return [String] the 
+  # @return [String] the generated text
   def self.text(length)
     return text_range(length) if length.is_a?(Range)
 
@@ -53,6 +53,10 @@ module Flores::Random
     length.times.collect { character }.join
   end # def text
 
+  # Generate text with random characters of a length within the given range.
+  #
+  # @param range [Range] the range of length to generate, inclusive
+  # @return [String] the generated text
   def self.text_range(range)
     raise ArgumentError, "Requires ascending range, you gave #{range}." if range.end < range.begin
     raise ArgumentError, "A negative range values are not permitted, I received range #{range}" if range.begin < 0
