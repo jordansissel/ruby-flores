@@ -29,3 +29,15 @@ install: $(GEM)
 .PHONY: clean
 clean:
 	-rm -rf .yardoc $(GEM) $(NAME)-$(VERSION)/
+
+.PHONY: rubocop
+rubocop:
+	rubocop -D
+
+.PHONY: test
+test: rubocop
+	rspec -f Flores::RSpec::Formatters::Analyze
+
+.PHONY: test
+test-fast: rubocop
+	ITERATIONS=10 rspec -f Flores::RSpec::Formatters::Analyze
