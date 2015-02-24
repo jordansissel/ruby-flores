@@ -14,31 +14,33 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+require "flores/rspec"
 require "flores/random"
 require "socket"
-require "flores/rspec"
 
-RSpec.configure do |c|
-  Flores::RSpec.configure(c)
+RSpec.configure do |config|
+  Flores::RSpec.configure(config)
+  Kernel.srand config.seed
+
+  # Demonstrate the wonderful Analyze formatter
+  config.add_formatter("Flores::RSpec::Formatters::Analyze")
 end
 
 describe TCPServer do
-  analyze
-
+  analyze_results
   subject(:socket) { Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0) }
   let(:sockaddr) { Socket.sockaddr_in(port, "127.0.0.1") }
-  let(:ignore_eaddrinuse) do
-    proc do |m, *args|
-      begin
-        m.call(*args)
-      rescue Errno::EADDRINUSE # rubocop:disable Lint/HandleExceptions
-        # ignore
-      end
-    end
-  end
 
   after do
-    socket.close
+    socket.close unless socket.closed?
+  end
+
+  context "on a random port" do
+    let(:port) { Flores::Random.integer(-100_000..100_000) }
+    stress_it "should bind successfully", [:port] do
+      socket.bind(sockaddr)
+      expect(socket.local_address.ip_port).to(be == port)
+    end
   end
 
   context "on privileged ports" do
@@ -53,7 +55,13 @@ describe TCPServer do
     stress_it "should bind on a port" do
       # EADDRINUSE is expected since we are picking ports at random
       # Let's ignore this specific exception
-      allow(socket).to(receive(:bind).and_wrap_original(&ignore_eaddrinuse))
+      allow(socket).to(receive(:bind).and_wrap_original do |original, *args|
+        begin
+          original.call(*args)
+        rescue Errno::EADDRINUSE
+          # Ignore
+        end
+      end)
       expect { socket.bind(sockaddr) }.to_not(raise_error)
     end
   end
