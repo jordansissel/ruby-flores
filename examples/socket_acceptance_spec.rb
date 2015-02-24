@@ -14,12 +14,16 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+require "flores/rspec"
 require "flores/random"
 require "socket"
-require "flores/rspec"
 
-RSpec.configure do |c|
-  Flores::RSpec.configure(c)
+RSpec.configure do |config|
+  Kernel.srand config.seed
+  Flores::RSpec.configure(config)
+
+  # Demonstrate the wonderful Analyze formatter
+  config.add_formatter("Flores::RSpec::Formatters::Analyze")
 end
 
 # A factory for encapsulating behavior of a tcp server and client for the
@@ -53,7 +57,9 @@ class TCPIntegrationTestFactory
 
     @client.syswrite(text)
     @client.close
-    server.read
+    data = server.read
+    data.force_encoding(Encoding.default_external).encoding
+    data
   ensure
     @client.close unless @client.closed?
     server.close unless server.nil? || server.closed?
@@ -61,25 +67,27 @@ class TCPIntegrationTestFactory
 end
 
 describe "TCPServer+TCPSocket" do
+  analyze_results
+
   let(:port) { Flores::Random.integer(1024..65535) }
   let(:text) { Flores::Random.text(1..2000) }
   subject { TCPIntegrationTestFactory.new(port) }
-  
-  describe "using stress_it" do
-    stress_it2 "should send data correctly", [:port, :text] do
-      begin
-        subject.setup
-      rescue Errno::EADDRINUSE
-        next # Skip port bindings that are in use
-      end
 
-      begin
-        received = subject.send_and_receive(text)
-        expect(received.encoding).to(be == text.encoding)
-        expect(received).to(be == text)
-      ensure
-        subject.teardown
-      end
+  before do
+    begin
+      subject.setup
+    rescue Errno::EADDRINUSE
+      skip "Port #{port} was in use. Skipping!"
+    end
+  end
+  
+  stress_it "should send data correctly", [:port, :text] do
+    begin
+      received = subject.send_and_receive(text)
+      expect(received.encoding).to(be == text.encoding)
+      expect(received).to(be == text)
+    ensure
+      subject.teardown
     end
   end
 end
