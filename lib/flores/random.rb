@@ -26,7 +26,7 @@ module Flores::Random
   # characters.
   CHARACTERS = [
     # Basic Latin
-    *(32..126).map(&:chr),
+    *(32..126).map(&:chr).map { |c| c.force_encoding(Encoding.default_external) },
 
     # hand-selected CJK Unified Ideographs Extension A
     "㐤", "㐨", "㐻", "㑐",

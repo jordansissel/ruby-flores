@@ -20,6 +20,9 @@ shared_examples_for String do
   stress_it "should be a String" do
     expect(subject).to(be_a(String))
   end
+  stress_it "have expected encoding" do
+    expect(subject.encoding).to(be == Encoding.default_external)
+  end
   stress_it "have valid encoding" do
     expect(subject).to(be_valid_encoding)
   end
@@ -43,6 +46,10 @@ describe Flores::Random do
         it_behaves_like String, [:length]
         stress_it "has correct length" do
           expect(subject.length).to(eq(length))
+        end
+
+        stress_it "has correct encoding" do
+          expect(subject.encoding).to(be == Encoding.default_external)
         end
       end
 
