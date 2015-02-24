@@ -16,6 +16,8 @@
 #
 # encoding: utf-8
 # :nodoc:
+require "flores/namespace"
+
 module Flores::RSpec
   DEFAULT_ITERATIONS = 1..5000
 
