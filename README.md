@@ -14,9 +14,12 @@ to find common patterns in failures!
 Let's look at a sample situation. Ruby's TCPServer. Let's write a spec to cover a spec covering port binding:
 
 ```ruby
-describe TCPServer do
-  analyze_results # track the `let` and `subject` values in our tests.
+require "flores/rspec"
+RSpec.configure do |config|
+  Flores::RSpec.configure(config)
+end
 
+describe TCPServer do
   subject(:socket) { Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0) }
   let(:port) { 5000 }
   let(:sockaddr) { Socket.sockaddr_in(port, "127.0.0.1") }
@@ -48,7 +51,7 @@ Let's assume I don't know anything about tcp port ranges and test randomly in th
 
 ```ruby
 describe TCPServer do
-  let(:port) { Randomized.integer(-100_000..100_000) }
+  let(:port) { Flores::Random.integer(-100_000..100_000) }
   ...
 end
 ```
@@ -63,15 +66,19 @@ Failures:
 
   1) TCPServer should bind successfully
      Failure/Error: expect(socket.local_address.ip_port).to(be == port)
-       expected: == 83359
-            got:    17823
-     # ./tcpserver_spec.rb:12:in `block (2 levels) in <top (required)>'
+       expected: == 70144
+            got:    4608
+     # ./tcpserver_spec.rb:18:in `block (2 levels) in <top (required)>'
 
-Finished in 0.00155 seconds (files took 0.10221 seconds to load)
+Finished in 0.00163 seconds (files took 0.09982 seconds to load)
 1 example, 1 failure
+
+Failed examples:
+
+rspec ./tcpserver_spec.rb:16 # TCPServer should bind successfully
 ```
 
-Well that's weird. Binding port 83359 actually made it bind on port 17823!
+Well that's weird. Binding port 70144 actually made it bind on port 4608!
 
 If we run it more times, we'll see all kinds of different results:
 
@@ -112,68 +119,60 @@ each time. This lets you run  a given test many times with many random inputs!
 
 The result is grouped by failure and includes context. Let's see how it works:
 
-We'll change `it` to use `analyze_it` instead:
+We'll change `it` to use `stress_it` instead, and also add `analyze_results`:
 
 ```diff
 - it "should bind successfully" do
-+ analyze_it "should bind successfully", [:port] do
++ analyze_results # track the `let` and `subject` values in our tests.
++ stress_it "should bind successfully" do
 ```
+
+The `analyze_results` method just adds an `after` hook to capture the `let` and
+`subject` values used in each example.
+
+The final step is to use a custom formatter provided with this library to do the analysis.
 
 Now rerunning the test. With barely any spec changes from the original, we have
 now enough randomness and stress testing to identify many different failure cases
 and input ranges for those failures.
 
 ```
-Failures:
+% rspec -f Flores::RSpec::Formatters::Analyze tcpserver_spec.rb
 
-  1) TCPServer should bind successfully
-     Failure/Error: raise StandardError, Analysis.new(results) if results.any? { |k, _| k != :success }
-     StandardError:
-       31.14% tests successful of 2563 tests
-       Failure analysis:
-         50.57% -> [1296] SocketError
-           Sample exception for {:port=>-94900}
-             getaddrinfo: nodename nor servname provided, or not known
-           Samples causing SocketError:
-             {:port=>-49441}
-             {:port=>-1991}
-             {:port=>-54074}
-             {:port=>-1733}
-             {:port=>-21868}
-         16.89% -> [433] RSpec::Expectations::ExpectationNotMetError
-           Sample exception for {:port=>93844}
-             expected: == 93844
-                  got:    28308
-           Samples causing RSpec::Expectations::ExpectationNotMetError:
-             {:port=>89451}
-             {:port=>95627}
-             {:port=>95225}
-             {:port=>73106}
-             {:port=>77167}
-         1.01% -> [26] Errno::EACCES
-           Sample exception for {:port=>65649}
-             Permission denied - bind(2) for 127.0.0.1:113
-           Samples causing Errno::EACCES:
-             {:port=>913}
-             {:port=>141}
-             {:port=>66194}
-             {:port=>66217}
-             {:port=>66408}
-         0.39% -> [10] Errno::EADDRINUSE
-           Sample exception for {:port=>34402}
-             Address already in use - bind(2) for 127.0.0.1:34402
-           Samples causing Errno::EADDRINUSE:
-             {:port=>50905}
-             {:port=>71202}
-             {:port=>34402}
-             {:port=>28235}
-             {:port=>85641}
-     # ./lib/rspec/stress_it.rb:103:in `block in analyze_it'
+TCPServer should bind successfully
+  33.96% (of 742 total) tests are successful
+  Failure analysis:
+    46.90% -> [348] SocketError
+      Sample exception for {:socket=>#<Socket:(closed)>, :port=>-74235}
+        getaddrinfo: nodename nor servname provided, or not known
+      Samples causing SocketError:
+        {:socket=>#<Socket:(closed)>, :port=>-60170}
+        {:socket=>#<Socket:(closed)>, :port=>-73159}
+        {:socket=>#<Socket:(closed)>, :port=>-84648}
+        {:socket=>#<Socket:(closed)>, :port=>-5936}
+        {:socket=>#<Socket:(closed)>, :port=>-78195}
+    18.33% -> [136] RSpec::Expectations::ExpectationNotMetError
+      Sample exception for {:socket=>#<Socket:(closed)>, :port=>72849, :sockaddr=>"\x10\x02\x1C\x91\x7F\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00"}
+        expected: == 72849
+             got:    7313
+      Samples causing RSpec::Expectations::ExpectationNotMetError:
+        {:socket=>#<Socket:(closed)>, :port=>74072, :sockaddr=>"\x10\x02!X\x7F\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00"}
+        {:socket=>#<Socket:(closed)>, :port=>77973, :sockaddr=>"\x10\x020\x95\x7F\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00"}
+        {:socket=>#<Socket:(closed)>, :port=>88867, :sockaddr=>"\x10\x02[#\x7F\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00"}
+        {:socket=>#<Socket:(closed)>, :port=>87710, :sockaddr=>"\x10\x02V\x9E\x7F\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00"}
+        {:socket=>#<Socket:(closed)>, :port=>95690, :sockaddr=>"\x10\x02u\xCA\x7F\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00"}
+    0.81% -> [6] Errno::EACCES
+      Sample exception for {:socket=>#<Socket:(closed)>, :port=>65897, :sockaddr=>"\x10\x02\x01i\x7F\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00"}
+        Permission denied - bind(2) for 127.0.0.1:361
+      Samples causing Errno::EACCES:
+        {:socket=>#<Socket:(closed)>, :port=>879, :sockaddr=>"\x10\x02\x03o\x7F\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00"}
+        {:socket=>#<Socket:(closed)>, :port=>66258, :sockaddr=>"\x10\x02\x02\xD2\x7F\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00"}
+        {:socket=>#<Socket:(closed)>, :port=>65829, :sockaddr=>"\x10\x02\x01%\x7F\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00"}
+        {:socket=>#<Socket:(closed)>, :port=>66044, :sockaddr=>"\x10\x02\x01\xFC\x7F\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00"}
+        {:socket=>#<Socket:(closed)>, :port=>65897, :sockaddr=>"\x10\x02\x01i\x7F\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00"}
 
-Finished in 0.0735 seconds (files took 0.10247 seconds to load)
-1 example, 1 failure
-
-Failed examples:
-
-rspec ./tcpserver_spec.rb:8 # TCPServer should bind successfully
+Finished in 0.10509 seconds
+742 examples, 490 failures
 ```
+
+Now we can see a wide variety of failure cases all found through randomization. Nice!
