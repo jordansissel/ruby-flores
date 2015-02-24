@@ -17,6 +17,8 @@ Gem::Specification.new do |spec|
   spec.files = files
   spec.require_paths << "lib"
 
+  spec.add_runtime_dependency "fuubar"
+
   spec.authors = ["Jordan Sissel"]
   spec.email = ["jls@semicomplete.com"]
 end

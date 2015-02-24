@@ -1,3 +1,4 @@
+# encoding: utf-8
 # This file is part of ruby-flores.
 # Copyright (C) 2015 Jordan Sissel
 # 
@@ -13,8 +14,6 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# encoding: utf-8
 
 require "flores/namespace"
 
@@ -83,9 +82,9 @@ module Flores::Random
   # @param range [Range]
   def self.number(range)
     raise ArgumentError, "Range not given, got #{range.class}: #{range.inspect}" if !range.is_a?(Range)
-    # Range#size returns the number of elements in the range, not the length of the range.
-    # This makes #size return (abs(range.begin - range.end) + 1), and we want the length, so subtract 1.
-    rand * (range.size - 1) + range.begin
+    # Ruby 1.9.3 and below do not have Enumerable#size, so we have to compute the size of the range
+    # ourselves.
+    rand * (range.end - range.begin) + range.begin
   end # def number
    
   # Run a block a random number of times.

@@ -14,10 +14,10 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-# :nodoc:
-module Flores # rubocop:disable Style/ClassAndModuleChildren
-  module RSpec # rubocop:disable Style/ClassAndModuleChildren
-    module Formatters # rubocop:disable Style/ClassAndModuleChildren
-    end
-  end
+require "flores/random"
+require "flores/rspec"
+
+RSpec.configure do |config|
+  Kernel.srand config.seed
+  Flores::RSpec.configure(config)
 end

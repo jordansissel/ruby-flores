@@ -1,3 +1,4 @@
+# encoding: utf-8
 # This file is part of ruby-flores.
 # Copyright (C) 2015 Jordan Sissel
 # 
@@ -13,14 +14,12 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# encoding: utf-8
-require "randomized"
+require "flores/random"
 require "socket"
-require "rspec/stress_it"
+require "flores/rspec"
 
 RSpec.configure do |c|
-  c.extend RSpec::StressIt
+  Flores::RSpec.configure(c)
 end
 
 # A factory for encapsulating behavior of a tcp server and client for the
@@ -62,12 +61,12 @@ class TCPIntegrationTestFactory
 end
 
 describe "TCPServer+TCPSocket" do
-  let(:port) { Randomized.integer(1024..65535) }
-  let(:text) { Randomized.text(1..2000) }
+  let(:port) { Flores::Random.integer(1024..65535) }
+  let(:text) { Flores::Random.text(1..2000) }
   subject { TCPIntegrationTestFactory.new(port) }
   
   describe "using stress_it" do
-    analyze_it "should send data correctly", [:port, :text] do
+    stress_it2 "should send data correctly", [:port, :text] do
       begin
         subject.setup
       rescue Errno::EADDRINUSE

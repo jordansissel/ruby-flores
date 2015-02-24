@@ -1,3 +1,4 @@
+# encoding: utf-8
 # This file is part of ruby-flores.
 # Copyright (C) 2015 Jordan Sissel
 # 
@@ -13,25 +14,20 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# encoding: utf-8
-require "flores/random"
-require "flores/rspec"
+require "spec_init"
 
-RSpec.configure do |c|
-  Flores::RSpec.configure(c)
-end
-
-shared_examples_for String do |variables|
-  analyze_it "should be a String", variables do
+shared_examples_for String do
+  stress_it "should be a String" do
     expect(subject).to(be_a(String))
   end
-  analyze_it "have valid encoding", variables do
+  stress_it "have valid encoding" do
     expect(subject).to(be_valid_encoding)
   end
 end
 
 describe Flores::Random do
+  analyze_results
+
   describe "#text" do
     context "with no arguments" do
       stress_it "should raise ArgumentError" do
@@ -43,30 +39,30 @@ describe Flores::Random do
       subject { described_class.text(length) }
 
       context "that is positive" do
-        let(:length) { rand(1..1000) }
+        let(:length) { Flores::Random.integer(1..1000) }
         it_behaves_like String, [:length]
-        analyze_it "has correct length", [:length] do
+        stress_it "has correct length" do
           expect(subject.length).to(eq(length))
         end
       end
 
       context "that is negative" do
-        let(:length) { -1 * rand(1..1000) }
-        analyze_it "should raise ArgumentError", [:length] do
+        let(:length) { -1 * Flores::Random.integer(1..1000) }
+        stress_it "should raise ArgumentError" do
           expect { subject }.to(raise_error(ArgumentError))
         end
       end
     end
 
     context "with 1 range argument" do
-      let(:start)  { rand(1..1000) }
-      let(:length) { rand(1..1000) }
+      let(:start)  { Flores::Random.integer(2..1000) }
+      let(:length) { Flores::Random.integer(1..1000) }
       subject { described_class.text(range) }
 
       context "that is ascending" do
         let(:range) { start..(start + length) }
         it_behaves_like String, [:range]
-        analyze_it "should give a string within that length range", [:range] do
+        stress_it "should give a string within that length range" do
           expect(subject).to(be_a(String))
           expect(range).to(include(subject.length))
         end
@@ -74,7 +70,7 @@ describe Flores::Random do
 
       context "that is descending" do
         let(:range) { start..(start - length) }
-        analyze_it "should raise ArgumentError", [:range] do
+        stress_it "should raise ArgumentError" do
           expect { subject }.to(raise_error(ArgumentError))
         end
       end
@@ -84,7 +80,7 @@ describe Flores::Random do
   describe "#character" do
     subject { described_class.character }
     it_behaves_like String, [:subject]
-    analyze_it "has length == 1", [:subject] do
+    stress_it "has length == 1" do
       expect(subject.length).to(be == 1)
     end
   end
@@ -94,11 +90,11 @@ describe Flores::Random do
     let(:length) { Flores::Random.integer(1..100_000) }
     let(:range) { start..(start + length) }
 
-    analyze_it "should be a #{type}", [:range] do
+    stress_it "should be a #{type}" do
       expect(subject).to(be_a(type))
     end
 
-    analyze_it "should be within the bounds of the given range", [:range] do
+    stress_it "should be within the bounds of the given range" do
       expect(range).to(include(subject))
     end
   end
@@ -116,17 +112,21 @@ describe Flores::Random do
   end
 
   describe "#iterations" do
-    let(:start) { Flores::Random.integer(1..100_000) }
-    let(:length) { Flores::Random.integer(1..100_000) }
+    let(:start) { Flores::Random.integer(1..1000) }
+    let(:length) { Flores::Random.integer(1..1000) }
     let(:range) { start..(start + length) }
     subject { Flores::Random.iterations(range) }
 
-    analyze_it "should return an Enumerable", [:range] do
+    stress_it "should return an Enumerable" do
       expect(subject).to(be_a(Enumerable))
     end
 
-    analyze_it "should have a size within the expected range", [:range] do
-      expect(range).to(include(subject.size))
+    stress_it "should have a size within the expected range" do
+      # Ruby 2.0 added Enumerable#size, so we can't use it here.
+      # Meaning `123.times.size` doesn't work. So for this test,
+      # we use small ranges because Enumerable#count actually
+      # counts (via iteration) and is slow on large numbers.
+      expect(range).to(include(subject.count))
     end
   end
 end 

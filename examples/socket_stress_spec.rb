@@ -1,3 +1,4 @@
+# encoding: utf-8
 # This file is part of ruby-flores.
 # Copyright (C) 2015 Jordan Sissel
 # 
@@ -13,17 +14,17 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# encoding: utf-8
-require "randomized"
+require "flores/random"
 require "socket"
-require "rspec/stress_it"
+require "flores/rspec"
 
 RSpec.configure do |c|
-  c.extend RSpec::StressIt
+  Flores::RSpec.configure(c)
 end
 
 describe TCPServer do
+  analyze
+
   subject(:socket) { Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0) }
   let(:sockaddr) { Socket.sockaddr_in(port, "127.0.0.1") }
   let(:ignore_eaddrinuse) do
@@ -41,14 +42,14 @@ describe TCPServer do
   end
 
   context "on privileged ports" do
-    let(:port) { Randomized.integer(1..1023) }
+    let(:port) { Flores::Random.integer(1..1023) }
     stress_it "should raise Errno::EACCESS" do
       expect { socket.bind(sockaddr) }.to(raise_error(Errno::EACCES))
     end
   end
 
   context "on unprivileged ports" do
-    let(:port) { Randomized.integer(1025..65535) }
+    let(:port) { Flores::Random.integer(1025..65535) }
     stress_it "should bind on a port" do
       # EADDRINUSE is expected since we are picking ports at random
       # Let's ignore this specific exception

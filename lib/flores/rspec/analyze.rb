@@ -1,3 +1,4 @@
+# encoding: utf-8
 # This file is part of ruby-flores.
 # Copyright (C) 2015 Jordan Sissel
 # 
@@ -13,8 +14,6 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# encoding: utf-8
 require "flores/namespace"
 require "flores/rspec"
 
@@ -28,39 +27,52 @@ require "flores/rspec"
 #
 # TODO(sissel): Show an example of stress_it and analyze_it
 module Flores::RSpec::Analyze
-  # Perform analysis on failure scenarios of a given example
+  # Save state after each example so it can be used in analysis after specs are completed.
   #
-  # This will run the given example a random number of times and aggregate the
-  # results. If any failures occur, the spec will fail and a report will be
-  # given on that test.
+  # If you use this, you'll want to set your RSpec formatter to
+  # Flores::RSpec::Formatter::Analyze
   #
-  # Example spec:
+  # Let's show an example that fails sometimes.
   #
-  #     let(:number) { Flores::Random.number(0..200) }
-  #     analyze_it "should be less than 100", [:number] do
-  #       expect(number).to(be < 100)
+  #     describe "Addition of two numbers" do
+  #       context "positive numbers" do
+  #         analyze_results
+  #         let(:a) { Flores::Random.number(1..1000) }
+  #     
+  #         # Here we make negative numbers possible to cause failure in our test.
+  #         let(:b) { Flores::Random.number(-200..1000) }
+  #         subject { a + b }
+  #     
+  #         stress_it "should be positive" do
+  #           expect(subject).to(be > 0)
+  #         end
+  #       end
   #     end
-  def analyze_it(name, variables, &block) # rubocop:disable Metrics/AbcSize
-    it(name) do
-      results = Hash.new { |h, k| h[k] = [] }
-      Flores::Random.iterations(Flores::RSpec::DEFAULT_ITERATIONS).each do
-        state = Hash[variables.collect { |l| [l, __send__(l)] }]
-        begin
-          instance_eval(&block)
-          results[:success] << [state, nil]
-        rescue => e
-          results[e.class] << [state, e]
-        rescue Exception => e # rubocop:disable Lint/RescueException
-          results[e.class] << [state, e]
-        end
-
-        # Clear `let` memoizations
-        __memoized.clear
-      end
-
-      raise StandardError, Analysis.new(results) if results.any? { |k, _| k != :success }
+  #
+  # And running it:
+  #
+  #     % rspec -f Flores::RSpec::Formatter::Analyze
+  #     Addition of two numbers positive numbers should be positive
+  #       98.20% tests successful of 3675 tests
+  #       Failure analysis:
+  #         1.80% -> [66] RSpec::Expectations::ExpectationNotMetError
+  #           Sample exception for {:a=>126.21705882478048, :b=>-139.54814492675024, :subject=>-13.33108610196976}
+  #             expected: > 0
+  #                  got:   -13.33108610196976
+  #           Samples causing RSpec::Expectations::ExpectationNotMetError:
+  #             {:a=>90.67298249206425, :b=>-136.6237821353908, :subject=>-45.95079964332655}
+  #             {:a=>20.35865155878871, :b=>-39.592417377658876, :subject=>-19.233765818870165}
+  #             {:a=>158.07905166101787, :b=>-177.5864470909581, :subject=>-19.50739542994023}
+  #             {:a=>31.80445518715138, :b=>-188.51942190504894, :subject=>-156.71496671789757}
+  #             {:a=>116.1479954937354, :b=>-146.18477887927958, :subject=>-30.036783385544183}
+  def analyze_results
+    # TODO(sissel): Would be lovely to figure out how to inject an 'after' for
+    # all examples if we are using the Analyze formatter.
+    # Then this method could be implied by using the right formatter, or something.
+    after do |example|
+      example.metadata[:values] = __memoized.clone
     end
-  end # def analyze_it
+  end
 
   # A formatter to show analysis of an `analyze_it` example. 
   class Analysis < StandardError

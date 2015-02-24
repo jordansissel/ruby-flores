@@ -1,3 +1,4 @@
+# encoding: utf-8
 # This file is part of ruby-flores.
 # Copyright (C) 2015 Jordan Sissel
 # 
@@ -13,14 +14,12 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# encoding: utf-8
-require "randomized"
+require "flores/random"
 require "socket"
-require "rspec/stress_it"
+require "flores/rspec"
 
 RSpec.configure do |c|
-  c.extend RSpec::StressIt
+  Flores::RSpec.configure(c)
 end
 
 describe TCPServer do
@@ -28,8 +27,8 @@ describe TCPServer do
   let(:sockaddr) { Socket.sockaddr_in(port, "127.0.0.1") }
 
   context "on a random port" do
-    let(:port) { Randomized.integer(-100_000..100_000) }
-    analyze_it "should bind successfully", [:port] do
+    let(:port) { Flores::Random.integer(-100_000..100_000) }
+    stress_it2 "should bind successfully", [:port] do
       begin
         socket.bind(sockaddr)
         expect(socket.local_address.ip_port).to(be == port)

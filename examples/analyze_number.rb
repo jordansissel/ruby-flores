@@ -1,3 +1,4 @@
+# encoding: utf-8
 # This file is part of ruby-flores.
 # Copyright (C) 2015 Jordan Sissel
 # 
@@ -13,18 +14,20 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# encoding: utf-8
-require "randomized"
-require "rspec/stress_it"
+require "flores/rspec"
+require "flores/random"
 
 RSpec.configure do |c|
-  c.extend RSpec::StressIt
+  Flores::RSpec.configure(c)
+  c.add_formatter("Flores::RSpec::Formatters::Analyze")
 end
 
-describe "number" do
-  let(:number) { Randomized.number(0..200) }
-  analyze_it "should be less than 100", [:number] do
-    expect(number).to(be < 100)
+describe "a random number" do
+  context "between 0 and 200 inclusive" do
+    let(:number) { Flores::Random.number(0..200) }
+    analyze_results
+    stress_it "should be less than 100" do
+      expect(number).to(be < 100)
+    end
   end
 end
