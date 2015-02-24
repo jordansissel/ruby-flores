@@ -2,7 +2,7 @@ Gem::Specification.new do |spec|
   files = %x(git ls-files).split("\n")
 
   spec.name = "flores"
-  spec.version = "0.0.2"
+  spec.version = "0.0.3"
   spec.summary = "Fuzz, randomize, and stress your tests"
   spec.description = <<-DESCRIPTION
     Add fuzzing, randomization, and stress to your tests.
@@ -16,8 +16,6 @@ Gem::Specification.new do |spec|
 
   spec.files = files
   spec.require_paths << "lib"
-
-  spec.add_runtime_dependency "fuubar"
 
   spec.authors = ["Jordan Sissel"]
   spec.email = ["jls@semicomplete.com"]
