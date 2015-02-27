@@ -1,5 +1,9 @@
 # Flores - a stress testing library
 
+This library is named in loving memory of Carlo Flores.
+
+---
+
 When writing tests, it is often good to test a wide variety of inputs to ensure
 your entire input range behaves correctly.
 
