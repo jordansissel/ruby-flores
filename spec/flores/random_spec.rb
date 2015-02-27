@@ -136,4 +136,22 @@ describe Flores::Random do
       expect(range).to(include(subject.count))
     end
   end
+
+  describe "#items" do
+    let(:start) { Flores::Random.integer(1..1000) }
+    let(:length) { Flores::Random.integer(1..1000) }
+    let(:range) { start..(start + length) }
+    let(:items) { Flores::Random.iterations(range).collect { Flores::Random.number(1..1000) } }
+    subject { Flores::Random.item(items) }
+
+    stress_it "should choose a random item from the list" do
+      expect(items).to(include(subject))
+    end
+
+    context "with a list of numbers" do
+      stress_it "should be return a number" do
+        expect(subject).to(be_a(Numeric))
+      end
+    end
+  end
 end 

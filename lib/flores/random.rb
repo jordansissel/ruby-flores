@@ -99,4 +99,9 @@ module Flores::Random
       integer(range).times
     end
   end # def iterations
+
+  # Return a random element from an array
+  def self.item(array)
+    array[integer(0...array.size)]
+  end
 end # module Randomized
