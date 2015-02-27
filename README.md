@@ -117,11 +117,11 @@ we introduced randomness to our test inputs.
 We can go further and run a given spec example many times and group the
 failures by similarity and include context (what the inputs were, etc)
 
-This library provides an `analyze_it` helper which behaves similarly to rspec's
-`it` except that it runs the block a random number of times and clears the `let` cache
-each time. This lets you run  a given test many times with many random inputs!
+This library provides an `stress_it` helper which behaves similarly to rspec's
+`it` except that the spec is copied (and run) many times.
 
-The result is grouped by failure and includes context. Let's see how it works:
+The result is grouped by failure and includes context (`let` and `subject`).
+Let's see how it works:
 
 We'll change `it` to use `stress_it` instead, and also add `analyze_results`:
 
