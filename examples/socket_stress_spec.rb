@@ -58,7 +58,7 @@ describe TCPServer do
       allow(socket).to(receive(:bind).and_wrap_original do |original, *args|
         begin
           original.call(*args)
-        rescue Errno::EADDRINUSE
+        rescue Errno::EADDRINUSE # rubocop:disable Lint/HandleExceptions
           # Ignore
         end
       end)

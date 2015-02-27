@@ -108,7 +108,7 @@ module Flores::RSpec::Analyze
       return format("%.2f%%", percent(count) * 100)
     end # def percent_s
 
-    def to_s
+    def to_s # rubocop:disable Metrics/AbcSize
       # This method is crazy complex for a formatter. Should refactor this significantly.
       report = []
       if @results[:pending].any?
