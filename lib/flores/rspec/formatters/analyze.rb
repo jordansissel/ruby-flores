@@ -18,18 +18,57 @@ require "flores/namespace"
 require "rspec/core/formatters/base_text_formatter"
 
 Flores::RSpec::Formatters::Analyze = Class.new(RSpec::Core::Formatters::BaseTextFormatter) do
-  RSpec::Core::Formatters.register self, :dump_failures, :dump_summary
+  RSpec::Core::Formatters.register self, :dump_failures, :dump_summary, :start, :example_passed, :example_failed, :example_pending
+
+  SPINNER = %w(▘ ▝ ▗ ▖)
+
+  def example_passed(event)
+    increment(:pass)
+  end
+
+  def example_failed(event)
+    increment(:failed)
+  end
+
+  def example_pending(event)
+    increment(:pending)
+  end
+
+
+  def increment(status)
+    return unless output.tty?
+    now = Time.new
+    if status == :failed
+      output.write("F")
+    elsif status == :pending
+      output.write("P")
+    end
+
+    if now - @last_update > 0.500
+      glyph = SPINNER[@count]
+      output.write("[2D#{glyph} ")
+      @last_update = now
+      @count += 1
+      @count = 0 if @count >= SPINNER.size
+    end
+  end
+
+  def start(event)
+    @last_update = Time.now
+    @total = event.count
+    @count = 0
+  end
 
   def dump_summary(event)
+    output.write("\r") if output.tty?
     # The event is an RSpec::Core::Notifications::SummaryNotification
     # Let's mimic the BaseTextFormatter but without the failing test report
-    output.puts 
     output.puts "Finished in #{event.formatted_duration}"
     output.puts "#{event.colorized_totals_line}"
   end
 
   def dump_failures(event)
-    output.puts
+    return if event.examples.select { |e| e.metadata[:execution_result].status == :failed }.count == 0
     group = event.examples.each_with_object(Hash.new { |h, k| h[k] = [] }) do |e, m| 
       m[e.metadata[:full_description]] << e
       m
