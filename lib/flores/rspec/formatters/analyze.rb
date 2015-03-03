@@ -22,18 +22,17 @@ Flores::RSpec::Formatters::Analyze = Class.new(RSpec::Core::Formatters::BaseText
 
   SPINNER = %w(▘ ▝ ▗ ▖)
 
-  def example_passed(event)
+  def example_passed(_event)
     increment(:pass)
   end
 
-  def example_failed(event)
+  def example_failed(_event)
     increment(:failed)
   end
 
-  def example_pending(event)
+  def example_pending(_event)
     increment(:pending)
   end
-
 
   def increment(status)
     return unless output.tty?
@@ -44,13 +43,15 @@ Flores::RSpec::Formatters::Analyze = Class.new(RSpec::Core::Formatters::BaseText
       output.write("P")
     end
 
-    if now - @last_update > 0.500
-      glyph = SPINNER[@count]
-      output.write("[2D#{glyph} ")
-      @last_update = now
-      @count += 1
-      @count = 0 if @count >= SPINNER.size
-    end
+    update_status if now - @last_update > 0.500
+  end
+
+  def update_status
+    glyph = SPINNER[@count]
+    output.write("[2D#{glyph} ")
+    @last_update = now
+    @count += 1
+    @count = 0 if @count >= SPINNER.size
   end
 
   def start(event)
@@ -67,8 +68,12 @@ Flores::RSpec::Formatters::Analyze = Class.new(RSpec::Core::Formatters::BaseText
     output.puts "#{event.colorized_totals_line}"
   end
 
+  def failures?(examples)
+    return examples.select { |e| e.metadata[:execution_result].status == :failed }.any?
+  end
+
   def dump_failures(event)
-    return if event.examples.select { |e| e.metadata[:execution_result].status == :failed }.count == 0
+    return unless failures?(event.examples)
     group = event.examples.each_with_object(Hash.new { |h, k| h[k] = [] }) do |e, m| 
       m[e.metadata[:full_description]] << e
       m
