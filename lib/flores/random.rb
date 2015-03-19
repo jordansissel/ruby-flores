@@ -104,4 +104,29 @@ module Flores::Random
   def self.item(array)
     array[integer(0...array.size)]
   end
+
+  def self.ipv4
+    [rand(1<<32)].pack("N").unpack("C4").join(".")
+  end
+
+  def self.ipv6
+    length = integer(2..8)
+    if length == 8
+      # Full ABCD:ABCD...
+      ipv6_pack(length)
+    elsif length == 2
+      # Two elements "0123::ABCD"
+      ipv6_pack(1) + "::" + ipv6_pack(1)
+    else
+      # Shortened with "::"
+      first = integer(2...length)
+      second = length - first
+      ipv6_pack(first) + "::" + ipv6_pack(second)
+    end
+  end
+
+  private
+  def self.ipv6_pack(length)
+    length.times.collect { integer(0..1<<16).to_s(16) }.join(":")
+  end
 end # module Randomized

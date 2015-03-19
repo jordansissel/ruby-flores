@@ -28,6 +28,13 @@ shared_examples_for String do
   end
 end
 
+shared_examples_for "network address" do
+  before { require "socket" }
+  stress_it "should be a valid ipv6 address according to Socket.pack_sockaddr_in" do
+    expect { Socket.pack_sockaddr_in(0, subject) }.not_to(raise_error)
+  end
+end
+
 describe Flores::Random do
   analyze_results
 
@@ -153,5 +160,15 @@ describe Flores::Random do
         expect(subject).to(be_a(Numeric))
       end
     end
+  end
+
+  describe "#ipv6" do
+    subject { Flores::Random.ipv6 }
+    it_behaves_like "network address"
+  end
+
+  describe "#ipv4" do
+    subject { Flores::Random.ipv4 }
+    it_behaves_like "network address"
   end
 end 
