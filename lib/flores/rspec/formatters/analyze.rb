@@ -43,13 +43,13 @@ Flores::RSpec::Formatters::Analyze = Class.new(RSpec::Core::Formatters::BaseText
       output.write("P")
     end
 
-    update_status if now - @last_update > 0.500
+    update_status if now - @last_update > 0.200
   end
 
   def update_status
     glyph = SPINNER[@count]
     output.write("[2D#{glyph} ")
-    @last_update = now
+    @last_update = Time.new
     @count += 1
     @count = 0 if @count >= SPINNER.size
   end
