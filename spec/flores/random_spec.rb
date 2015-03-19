@@ -35,6 +35,12 @@ shared_examples_for "network address" do
   end
 end
 
+shared_examples_for Socket do
+  stress_it "should be a Socket" do
+    expect(socket).to(be_a(Socket))
+  end
+end
+
 describe Flores::Random do
   analyze_results
 
@@ -170,5 +176,62 @@ describe Flores::Random do
   describe "#ipv4" do
     subject { Flores::Random.ipv4 }
     it_behaves_like "network address"
+  end
+
+  describe "networking" do
+    let(:socket) { subject[0] }
+    let(:host) { subject[1] }
+    let(:port) { subject[2] }
+    after do
+      socket.close
+    end
+
+    describe "#udp_listener" do
+      let(:text) { Flores::Random.text(1..100) }
+      subject { Flores::Random.udp_listener }
+      it_behaves_like Socket
+
+      context "#recvfrom" do
+        let(:payload) do
+          data, _ = socket.recvfrom(65536)
+          data.force_encoding(text.encoding)
+        end
+        let(:client) { UDPSocket.new }
+
+        before do
+          client.send(text, 0, host, port)
+        end
+
+        after do
+          client.close
+        end
+
+        it "receives udp packets" do
+          expect(payload).to(be == text)
+        end
+      end
+    end
+
+    describe "#tcp_listener" do
+      subject { Flores::Random.tcp_listener }
+      it_behaves_like Socket
+
+      context "#accept" do
+        let(:client) { TCPSocket.new(host, port) }
+
+        before do
+          client
+        end
+
+        after do
+          client.close
+        end
+
+        it "returns a socket" do
+          connection, _address = socket.accept
+          expect(connection).to(be_a(Socket))
+        end
+      end
+    end
   end
 end 

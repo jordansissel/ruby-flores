@@ -105,24 +105,52 @@ module Flores::Random
     array[integer(0...array.size)]
   end
 
+  # Return a random IPv4 address as a string
   def self.ipv4
+    # TODO(sissel): Support CIDR range restriction?
+    # TODO(sissel): Support netmask restriction?
     [integer(0..IPV4_MAX)].pack("N").unpack("C4").join(".")
   end
 
+  # Return a random IPv6 address as a string
+  #
+  # The address may be in abbreviated form (ABCD::01EF):w
   def self.ipv6
+    # TODO(sissel): Support CIDR range restriction?
+    # TODO(sissel): Support netmask restriction?
     length = integer(2..8)
     if length == 8
-      # Full ABCD:ABCD...
+      # Full address; nothing to abbreviate
       ipv6_pack(length)
-    elsif length == 2
-      # Two elements "0123::ABCD"
-      ipv6_pack(1) + "::" + ipv6_pack(1)
     else
-      # Shortened with "::"
-      first = integer(2...length)
-      second = length - first
-      ipv6_pack(first) + "::" + ipv6_pack(second)
+      abbreviation = ipv6_abbreviation(length)
+      if length == 2
+        first = 1
+        second = 1
+      else
+        first = integer(2...length)
+        second = length - first
+      end
+      ipv6_pack(first) + abbreviation + ipv6_pack(second)
     end
+  end
+
+  # Get a TCP socket bound and listening on a random port.
+  #
+  # You are responsible for closing the socket.
+  #
+  # Returns [socket, address, port]
+  def self.tcp_listener(host = "127.0.0.1")
+    socket_listener(Socket::SOCK_STREAM, host)
+  end
+
+  # Get a UDP socket bound and listening on a random port.
+  #
+  # You are responsible for closing the socket.
+  #
+  # Returns [socket, address, port]
+  def self.udp_listener(host = "127.0.0.1")
+    socket_listener(Socket::SOCK_DGRAM, host)
   end
 
   private
@@ -132,5 +160,36 @@ module Flores::Random
 
   def self.ipv6_pack(length)
     length.times.collect { integer(0..IPV6_SEGMENT).to_s(16) }.join(":")
+  end
+
+  def self.ipv6_abbreviation(length)
+    abbreviate = (integer(0..1) == 0)
+    if abbreviate
+      "::"
+    else
+      ":" + (8 - length).times.collect { "0" }.join(":") + ":"
+    end
+  end
+
+  LISTEN_BACKLOG = 5
+  def self.socket_listener(type, host)
+    socket = server_socket_class.new(Socket::AF_INET, type)
+    socket.bind(Socket.pack_sockaddr_in(0, host))
+    if type == Socket::SOCK_STREAM || type == Socket::SOCK_SEQPACKET
+      socket.listen(LISTEN_BACKLOG)
+    end
+
+    port = socket.local_address.ip_port
+    address = socket.local_address.ip_address
+    [socket, address, port]
+  end
+
+  def self.server_socket_class
+    if RUBY_ENGINE == 'jruby'
+      # https://github.com/jruby/jruby/wiki/ServerSocket
+      ServerSocket
+    else
+      Socket
+    end
   end
 end # module Randomized
