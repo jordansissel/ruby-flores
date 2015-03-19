@@ -106,7 +106,7 @@ module Flores::Random
   end
 
   def self.ipv4
-    [rand(1<<32)].pack("N").unpack("C4").join(".")
+    [integer(0..IPV4_MAX)].pack("N").unpack("C4").join(".")
   end
 
   def self.ipv6
@@ -126,7 +126,11 @@ module Flores::Random
   end
 
   private
+
+  IPV4_MAX = 1 << 32
+  IPV6_SEGMENT = 1 << 16
+
   def self.ipv6_pack(length)
-    length.times.collect { integer(0..1<<16).to_s(16) }.join(":")
+    length.times.collect { integer(0..IPV6_SEGMENT).to_s(16) }.join(":")
   end
 end # module Randomized
