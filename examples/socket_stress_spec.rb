@@ -20,7 +20,7 @@ require "socket"
 
 RSpec.configure do |config|
   Flores::RSpec.configure(config)
-  Kernel.srand config.seed
+  Kernel.srand(config.seed)
 
   # Demonstrate the wonderful Analyze formatter
   config.add_formatter("Flores::RSpec::Formatters::Analyze")
