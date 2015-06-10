@@ -112,9 +112,9 @@ module Flores::PKI
       @certificate.version = 2
 
       @certificate.subject = subject
-      @certificate.public_key = public_key
       @certificate.not_before = start_time
       @certificate.not_after = expire_time
+      @certificate.public_key = public_key
       @certificate
     end
 
@@ -147,6 +147,7 @@ module Flores::PKI
       extensions = OpenSSL::X509::ExtensionFactory.new
       extensions.subject_certificate = certificate
       extensions.issuer_certificate = certificate
+      certificate.issuer = certificate.subject
 
       certificate.add_extension(extensions.create_extension("subjectKeyIdentifier", "hash", true))
       certificate.add_extension(extensions.create_extension("authorityKeyIdentifier", "keyid:always,issuer", true))
@@ -168,14 +169,15 @@ module Flores::PKI
       extensions = OpenSSL::X509::ExtensionFactory.new
       extensions.subject_certificate = certificate
       extensions.issuer_certificate = signing_certificate
+      certificate.issuer = signing_certificate.subject
 
       certificate.add_extension(extensions.create_extension("subjectKeyIdentifier", "hash", true))
       certificate.add_extension(extensions.create_extension("authorityKeyIdentifier", "keyid:always,issuer", true))
       certificate.add_extension(extensions.create_extension("basicConstraints", "CA:TRUE", true))
       # Rough googling seems to indicate at least keyCertSign is required for CA and intermediate certs.
       certificate.add_extension(extensions.create_extension("keyUsage", "keyCertSign, cRLSign, digitalSignature", true))
-      certificate.serial = OpenSSL::BN.new(serial)
 
+      certificate.serial = OpenSSL::BN.new(serial)
       certificate.sign(signing_key, digest_method)
       certificate
     end
@@ -184,6 +186,7 @@ module Flores::PKI
       extensions = OpenSSL::X509::ExtensionFactory.new
       extensions.subject_certificate = certificate
       extensions.issuer_certificate = signing_certificate
+      certificate.issuer = signing_certificate.subject
 
       certificate.add_extension(extensions.create_extension("subjectKeyIdentifier", "hash", true))
       certificate.add_extension(extensions.create_extension("authorityKeyIdentifier", "keyid,issuer:always", true))
@@ -202,6 +205,7 @@ module Flores::PKI
       extensions = OpenSSL::X509::ExtensionFactory.new
       extensions.subject_certificate = certificate
       extensions.issuer_certificate = certificate
+      certificate.issuer = certificate.subject
 
       certificate.add_extension(extensions.create_extension("subjectKeyIdentifier", "hash", true))
       certificate.add_extension(extensions.create_extension("authorityKeyIdentifier", "keyid,issuer:always", true))

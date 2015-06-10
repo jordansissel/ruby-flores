@@ -40,17 +40,29 @@ describe Flores::PKI::CertificateSigningRequest do
   context "#create_intermediate" do
     let(:root_ca) { csr.create_root(root_key) }
     let(:key) { OpenSSL::PKey::RSA.generate(key_bits, 65537) }
-    let(:certificate) { csr.create_intermediate(root_ca, key) }
+    let(:intermediate_csr) { Flores::PKI::CertificateSigningRequest.new }
+    let(:certificate) { intermediate_csr.create_intermediate(root_ca, root_key) }
+    before do
+      intermediate_csr.subject = "OU=Fancy Pants Co. Intermediate 1"
+      intermediate_csr.public_key = key.public_key
+      intermediate_csr.start_time = Time.now
+      intermediate_csr.expire_time = intermediate_csr.start_time + certificate_duration
+    end
     it_behaves_like "a certificate"
   end
 
   context "#create" do
-    before do
-      csr.subject = "CN=example.com"
-    end
     let(:root_ca) { csr.create_root(root_key) }
     let(:key) { OpenSSL::PKey::RSA.generate(key_bits, 65537) }
-    let(:certificate) { csr.create(root_ca, key) }
+    let(:server_csr) { Flores::PKI::CertificateSigningRequest.new }
+    let(:certificate) { server_csr.create(root_ca, root_key) }
+    before do
+      server_csr.subject = "CN=server.example.com"
+      server_csr.public_key = key.public_key
+      server_csr.start_time = Time.now
+      server_csr.expire_time = server_csr.start_time + certificate_duration
+    end
+
     it_behaves_like "a certificate"
   end
 
