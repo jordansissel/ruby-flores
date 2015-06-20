@@ -148,6 +148,17 @@ describe Flores::Random do
       # counts (via iteration) and is slow on large numbers.
       expect(range).to(include(subject.count))
     end
+
+    context "{ ... }" do
+      stress_it "should invoke a given block for each iteration" do
+        count = 0
+        Flores::Random.iterations(range) do
+          count += 1
+        end
+        expect(count).to(be > 0)
+        expect(range).to(include(count))
+      end
+    end
   end
 
   describe "#items" do
