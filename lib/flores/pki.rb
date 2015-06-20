@@ -47,9 +47,24 @@ module Flores::PKI
   #     intermediate_csr.subject = "OU=Fancy Pants Inc. Intermediate 1"
   #     intermediate_certificate = csr.create_intermediate(root_certificate, root_key)
   class CertificateSigningRequest
+    # raised when an invalid signing configuration is given
+    class InvalidRequest < StandardError; end
+
+    # raised when invalid data is present in a certificate request
     class InvalidData < StandardError; end
+
+    # raised when an invalid subject (format, or whatever) is given in a certificate request
     class InvalidSubject < InvalidData; end
+
+    # raised when an invalid time value is given for a certificate request
     class InvalidTime < InvalidData; end
+
+    def initialize
+      self.serial = random_serial
+      self.digest_method = default_digest_method
+    end
+
+    private
 
     def validate_subject(value)
       OpenSSL::X509::Name.parse(value)
@@ -129,93 +144,109 @@ module Flores::PKI
       OpenSSL::Digest::SHA256.new
     end
 
-    # Creates a new root certificate authority
-    #
-    # - signing_key : probably OpenSSL::PKey::RSA
-    # - digest_method : An OpenSSL::Digest instance.
-    #
-    # Example:
-    #
-    #     key = OpenSSL::PKey::RSA.generate(4096, 65537) 
-    #     csr.create_root(key.private_key, OpenSSL::Digest::SHA256.new)
-    #
-    # A root certificate authority has two basic properties:
-    # 1) It is signed by itself
-    # 2) It can sign certificates
-    #
-    def create_root(signing_key, digest_method = default_digest_method, serial = random_serial)
+    def self_signed?
+      @signing_certificate.nil?
+    end
+
+    def validate!
+      if self_signed?
+        if @signing_key.nil?
+          raise InvalidRequest, "No signing_key given. Cannot sign key."
+        end
+      elsif @signing_certificate.nil? && @signing_key
+        raise InvalidRequest, "signing_key given, but no signing_certificate is set"
+      elsif @signing_certificate && @signing_key.nil?
+        raise InvalidRequest, "signing_certificate given, but no signing_key is set"
+      end
+    end
+
+    def create
+      validate!
       extensions = OpenSSL::X509::ExtensionFactory.new
       extensions.subject_certificate = certificate
-      extensions.issuer_certificate = certificate
-      certificate.issuer = certificate.subject
+      extensions.issuer_certificate = self_signed? ? certificate : signing_certificate
 
+      certificate.issuer = extensions.issuer_certificate.subject
       certificate.add_extension(extensions.create_extension("subjectKeyIdentifier", "hash", true))
+
+      # RFC 5280 4.2.1.1. Authority Key Identifier
+      # This is "who signed this key"
       certificate.add_extension(extensions.create_extension("authorityKeyIdentifier", "keyid:always,issuer", true))
-      certificate.add_extension(extensions.create_extension("basicConstraints", "CA:TRUE", true))
-      # Rough googling seems to indicate at least keyCertSign is required for CA and intermediate certs.
-      certificate.add_extension(extensions.create_extension("keyUsage", "keyCertSign, cRLSign, digitalSignature", true))
 
+      if want_signature_ability?
+        # Create a CA.
+        certificate.add_extension(extensions.create_extension("basicConstraints", "CA:TRUE", true))
+        # Rough googling seems to indicate at least keyCertSign is required for CA and intermediate certs.
+        certificate.add_extension(extensions.create_extension("keyUsage", "keyCertSign, cRLSign, digitalSignature", true))
+      else
+        # Create a client+server certificate
+        #
+        # It feels weird to create a certificate that's valid as both server and client, but a brief inspection of major
+        # web properties (apple.com, google.com, yahoo.com, github.com, fastly.com, mozilla.com, amazon.com) reveals that
+        # major web properties have certificates with both clientAuth and serverAuth extended key usages. Further,
+        # these major server certificates all have digitalSignature and keyEncipherment for key usage.
+        #
+        # Here's the command I used to check this:
+        #    echo mozilla.com apple.com github.com google.com yahoo.com fastly.com elastic.co amazon.com \
+        #    | xargs -n1 sh -c 'openssl s_client -connect $1:443 \
+        #    | sed -ne "/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p" \
+        #    | openssl x509 -text -noout | sed -ne "/X509v3 extensions/,/Signature Algorithm/p" | sed -e "s/^/$1 /"' - \
+        #    | grep -A2 'Key Usage'
+        certificate.add_extension(extensions.create_extension("keyUsage", "digitalSignature, keyEncipherment", true))
+        certificate.add_extension(extensions.create_extension("extendedKeyUsage", "clientAuth, serverAuth", false))
+      end
       certificate.serial = OpenSSL::BN.new(serial)
       certificate.sign(signing_key, digest_method)
       certificate
     end
 
-    # Creates a new intermediate certificate authority
-    #
-    # An intermediate certificate authority is a certificate that has two basic properties:
-    # 1) It is signed by another certificate (root or intermediate) authority.
-    # 2) It can sign certificates
-    def create_intermediate(signing_certificate, signing_key, digest_method = default_digest_method, serial = random_serial)
-      extensions = OpenSSL::X509::ExtensionFactory.new
-      extensions.subject_certificate = certificate
-      extensions.issuer_certificate = signing_certificate
-      certificate.issuer = signing_certificate.subject
+    # Set the certificate which is going to be signing this request.
+    def signing_certificate=(certificate)
+      raise InvalidData, "signing_certificate must be an OpenSSL::X509::Certificate" unless certificate.is_a?(OpenSSL::X509::Certificate)
+      @signing_certificate = certificate
+    end
+    attr_reader :signing_certificate
 
-      certificate.add_extension(extensions.create_extension("subjectKeyIdentifier", "hash", true))
-      certificate.add_extension(extensions.create_extension("authorityKeyIdentifier", "keyid:always,issuer", true))
-      certificate.add_extension(extensions.create_extension("basicConstraints", "CA:TRUE", true))
-      # Rough googling seems to indicate at least keyCertSign is required for CA and intermediate certs.
-      certificate.add_extension(extensions.create_extension("keyUsage", "keyCertSign, cRLSign, digitalSignature", true))
-
-      certificate.serial = OpenSSL::BN.new(serial)
-      certificate.sign(signing_key, digest_method)
-      certificate
+    attr_reader :signing_key
+    def signing_key=(private_key)
+      raise InvalidData, "signing_key must be an OpenSSL::PKey::PKey (or a subclass)" unless private_key.is_a?(OpenSSL::PKey::PKey)
+      @signing_key = private_key
     end
 
-    def create(signing_certificate, signing_key, digest_method = default_digest_method, serial = random_serial)
-      extensions = OpenSSL::X509::ExtensionFactory.new
-      extensions.subject_certificate = certificate
-      extensions.issuer_certificate = signing_certificate
-      certificate.issuer = signing_certificate.subject
-
-      certificate.add_extension(extensions.create_extension("subjectKeyIdentifier", "hash", true))
-      certificate.add_extension(extensions.create_extension("authorityKeyIdentifier", "keyid,issuer:always", true))
-      certificate.add_extension(extensions.create_extension("basicConstraints", "CA:FALSE", true))
-      certificate.add_extension(extensions.create_extension("keyUsage", "digitalSignature, keyEncipherment", true))
-      certificate.add_extension(extensions.create_extension("extendedKeyUsage", "serverAuth", false))
-
-      certificate.serial = OpenSSL::BN.new(serial)
-      certificate.sign(signing_key, digest_method)
-      certificate
+    def want_signature_ability=(value)
+      raise InvalidData, "want_signature_ability must be a boolean" unless value == true || value == false
+      @want_signature_ability = value
     end
 
-    def create_self_signed(signing_key, digest_method = default_digest_method, serial = random_serial)
-      serial = random_serial if serial.nil?
-
-      extensions = OpenSSL::X509::ExtensionFactory.new
-      extensions.subject_certificate = certificate
-      extensions.issuer_certificate = certificate
-      certificate.issuer = certificate.subject
-
-      certificate.add_extension(extensions.create_extension("subjectKeyIdentifier", "hash", true))
-      certificate.add_extension(extensions.create_extension("authorityKeyIdentifier", "keyid,issuer:always", true))
-      certificate.add_extension(extensions.create_extension("basicConstraints", "CA:FALSE", true))
-      certificate.add_extension(extensions.create_extension("keyUsage", "digitalSignature, keyEncipherment", true))
-      certificate.add_extension(extensions.create_extension("extendedKeyUsage", "serverAuth", false))
-
-      certificate.serial = OpenSSL::BN.new(serial)
-      certificate.sign(signing_key, digest_method)
-      certificate
+    def want_signature_ability?
+      @want_signature_ability == true
     end
+
+    attr_reader :digest_method
+    def digest_method=(value)
+      raise InvalidData, "digest_method must be a OpenSSL::Digest (or a subclass)" unless value.is_a?(OpenSSL::Digest)
+      @digest_method = value
+    end
+
+    attr_reader :serial
+    def serial=(value)
+      begin
+        Integer(value)
+      rescue
+        raise InvalidData, "Invalid serial value. Must be a number (or a String containing only nubers)"
+      end
+      @serial = value
+    end
+
+    public(:serial, :serial=)
+    public(:subject, :subject=)
+    public(:public_key, :public_key=)
+    public(:start_time, :start_time=)
+    public(:expire_time, :expire_time=)
+    public(:digest_method, :digest_method=)
+    public(:want_signature_ability?, :want_signature_ability=)
+    public(:signing_key, :signing_key=)
+    public(:signing_certificate, :signing_certificate=)
+    public(:create)
   end # class CertificateSigningRequest
 end  # Flores::PKI
