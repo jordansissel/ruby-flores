@@ -89,8 +89,8 @@ module Flores::PKI
 
     attr_reader :subject
 
-    def subject_alternates=(*values)
-      @subject_alternates = values.collect(&:validate_subject)
+    def subject_alternates=(values)
+      @subject_alternates = values
     end
 
     attr_reader :subject_alternates
