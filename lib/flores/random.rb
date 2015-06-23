@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 require "flores/namespace"
+autoload :Socket, "socket"
 
 # A collection of methods intended for use in randomized testing.
 module Flores::Random
@@ -192,4 +193,4 @@ module Flores::Random
       Socket
     end
   end
-end # module Randomized
+end # module Flores::Random

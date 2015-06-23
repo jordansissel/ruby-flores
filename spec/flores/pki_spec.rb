@@ -62,3 +62,13 @@ describe Flores::PKI::CertificateSigningRequest do
     it_behaves_like "a certificate"
   end
 end
+
+describe Flores::PKI do
+  context "#random_serial" do
+    let(:serial) { Flores::PKI.random_serial }
+    stress_it "generates a valid OpenSSL::BN value" do
+      OpenSSL::BN.new(serial)
+      Integer(serial)
+    end
+  end
+end

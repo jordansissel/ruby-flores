@@ -21,6 +21,14 @@ require "English"
 require "openssl"
 
 module Flores::PKI
+  # Generate a random serial number for a certificate.
+  def self.random_serial
+    # RFC5280 (X509) says:
+    # > 4.1.2.2.  Serial Number 
+    # > Certificate users MUST be able to handle serialNumber values up to 20 octets
+    Flores::Random.integer(1..9).to_s + Flores::Random.iterations(0..19).collect { Flores::Random.integer(0..9) }.join
+  end
+
   # A certificate signing request.
   #
   # From here, you can configure a certificate to be created based on your
@@ -60,7 +68,7 @@ module Flores::PKI
     class InvalidTime < InvalidData; end
 
     def initialize
-      self.serial = random_serial
+      self.serial = Flores::PKI.random_serial
       self.digest_method = default_digest_method
     end
 
@@ -131,13 +139,6 @@ module Flores::PKI
       @certificate.not_after = expire_time
       @certificate.public_key = public_key
       @certificate
-    end
-
-    def random_serial
-      # RFC5280 (X509) says:
-      # > 4.1.2.2.  Serial Number 
-      # > Certificate users MUST be able to handle serialNumber values up to 20 octets
-      Flores::Random.iterations(1..20).collect { Flores::Random.integer(0..9) }.join
     end
 
     def default_digest_method
