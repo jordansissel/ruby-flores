@@ -241,6 +241,7 @@ module Flores::PKI
 
     public(:serial, :serial=)
     public(:subject, :subject=)
+    public(:subject_alternates, :subject_alternates=)
     public(:public_key, :public_key=)
     public(:start_time, :start_time=)
     public(:expire_time, :expire_time=)
