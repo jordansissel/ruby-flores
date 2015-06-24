@@ -196,6 +196,11 @@ module Flores::PKI
         certificate.add_extension(extensions.create_extension("keyUsage", "digitalSignature, keyEncipherment", true))
         certificate.add_extension(extensions.create_extension("extendedKeyUsage", "clientAuth, serverAuth", false))
       end
+
+      if @subject_alternates
+        certificate.add_extension(extensions.create_extension("subjectAltName", @subject_alternates.join(",")))
+      end
+        
       certificate.serial = OpenSSL::BN.new(serial)
       certificate.sign(signing_key, digest_method)
       certificate
