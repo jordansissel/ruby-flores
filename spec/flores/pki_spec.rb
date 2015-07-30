@@ -64,11 +64,19 @@ describe Flores::PKI::CertificateSigningRequest do
 end
 
 describe Flores::PKI do
-  context "#random_serial" do
+  context ".random_serial" do
     let(:serial) { Flores::PKI.random_serial }
     stress_it "generates a valid OpenSSL::BN value" do
       OpenSSL::BN.new(serial)
       Integer(serial)
+    end
+  end
+
+  context ".generate" do
+    it "returns a certificate and a key" do
+      certificate, key = Flores::PKI.generate
+      expect(certificate).to(be_a(OpenSSL::X509::Certificate))
+      expect(key).to(be_a(OpenSSL::PKey::RSA))
     end
   end
 end
