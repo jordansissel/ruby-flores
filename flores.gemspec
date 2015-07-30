@@ -2,7 +2,7 @@ Gem::Specification.new do |spec|
   files = %x(git ls-files).split("\n")
 
   spec.name = "flores"
-  spec.version = "0.0.5"
+  spec.version = "0.0.6"
   spec.summary = "Fuzz, randomize, and stress your tests"
   spec.description = <<-DESCRIPTION
     Add fuzzing, randomization, and stress to your tests.
