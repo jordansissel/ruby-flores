@@ -160,7 +160,7 @@ module Flores::Random
   IPV6_SEGMENT = 1 << 16
 
   def self.ipv6_pack(length)
-    length.times.collect { integer(0..IPV6_SEGMENT).to_s(16) }.join(":")
+    length.times.collect { integer(0...IPV6_SEGMENT).to_s(16) }.join(":")
   end
 
   def self.ipv6_abbreviation(length)
