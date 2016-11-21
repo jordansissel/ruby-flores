@@ -143,10 +143,27 @@ module Flores::RSpec::Analyze
       sample = instances.sample(1)
       [ 
         "  #{percent_s(instances.length)} -> [#{instances.length}] #{error}",
-        "    Sample exception for #{sample.first[0]}",
-        sample.first[1].to_s.gsub(/^/, "      ")
+        "    Sample failure",
+        "      Inputs:",
+        *render_values(sample.first[0]).map { |x| "        #{x}" },
+        "      Exception:",
+        sample.first[1].to_s.gsub(/^/, "        ")
       ]
     end # def error_summary
+
+    def render_values(values)
+      # values should be an RSpec::Core::MemoizedHelpers::ThreadsafeMemoized
+      lets = values.instance_eval { @memoized }
+      return ["<nothing>"] if lets.nil?
+
+      lets.sort_by { |k,v| v.to_s.size }.map do |k,v| 
+        if v.to_s.size > 50
+          v = v.to_s[0, 50] + "..."
+        end
+        "#{k}=#{v}"
+      end
+    end
+
 
     def error_sample_states(error, instances)
       [ 
