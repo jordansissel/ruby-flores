@@ -20,6 +20,46 @@ autoload :Socket, "socket"
 
 # A collection of methods intended for use in randomized testing.
 module Flores::Random
+  DEFAULT_PORT_RANGE = 1024..65535
+  DEFAULT_PORT_CHECK_TIMEOUT = 1
+  DEFAULT_MAXIMUM_PORT_FIND_TRY = 15
+
+
+  # Try to find the first available port from a range.
+  # It will try 15 times and fails, this should give us some room
+  # if something wrong is going on.
+  def self.port(range = DEFAULT_PORT_RANGE)
+    try = 0
+    while try < DEFAULT_MAXIMUM_PORT_FIND_TRY
+      candidate = integer(range)
+
+      if port_available?(candidate)
+        break
+      else
+        try += 1
+      end
+    end
+
+    raise "Flores.random_port: Cannot find an available port, tried #{DEFAULT_MAXIMUM_PORT_FIND_TRY} times, range was: #{range}" if try == DEFAULT_MAXIMUM_PORT_FIND_TRY
+
+    candidate
+  end
+
+  # Try to start a Server on the specific port,
+  # If we can bind to it the port is available.
+  def self.port_available?(port)
+    begin
+      server = TCPServer.new(port)
+      available = true
+    rescue # Assume that any errors can do this
+      available = false
+    ensure
+      server.close if server
+    end
+
+    return available
+  end
+
   # A selection of UTF-8 characters
   #
   # I'd love to generate this, but I don't yet know enough about how unicode

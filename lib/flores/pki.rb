@@ -22,9 +22,12 @@ require "English"
 require "openssl"
 
 module Flores::PKI
-  GENERATE_DEFAULT_KEY_SIZE = 1024
-  GENERATE_DEFAULT_EXPONENT = 65537
-  GENERATE_DEFAULT_DURATION_RANGE = 1..86400
+  DEFAULT_CERTIFICATE_OPTIONS = {
+    :duration => 100..86400,
+    :key_size => 1024,
+    :exponent => 65537,
+    :want_signature_ability => false
+  }
 
   class << self
     # Generate a random serial number for a certificate.
@@ -49,10 +52,10 @@ module Flores::PKI
     # @params opts [Hash] Options
     # @return [OpenSSL::X509::Certificate, OpenSSL::Pkey::RSA]
     def generate(subject = "CN=localhost", opts = {})
-      key_size = opts.fetch(:key_size, GENERATE_DEFAULT_KEY_SIZE)
-      key = OpenSSL::PKey::RSA.generate(key_size, GENERATE_DEFAULT_EXPONENT)
+      key_size = opts.fetch(:key_size, DEFAULT_CERTIFICATE_OPTIONS[:key_size])
+      key = OpenSSL::PKey::RSA.generate(key_size, DEFAULT_CERTIFICATE_OPTIONS[:exponent])
 
-      certificate_duration = Flores::Random.number(GENERATE_DEFAULT_DURATION_RANGE)
+      certificate_duration = Flores::Random.number(DEFAULT_CERTIFICATE_OPTIONS[:duration])
 
       csr = Flores::PKI::CertificateSigningRequest.new
       csr.subject = subject
@@ -64,6 +67,38 @@ module Flores::PKI
       certificate = csr.create
 
       return [certificate, key]
+    end
+
+    def self.chain_certificates(*certificates)
+      certificates.join("\n")
+    end
+
+    def self.create_intermediate_certificate(subject, signing_certificate, signing_private_key, options  = {})
+      create_a_signed_certificate(subject, signing_certificate, signing_private_key, options.merge({ :want_signature_ability => true }))
+    end
+
+    def self.create_client_certicate(subject, signing_certificate, signing_private_key, options = {})
+      create_a_signed_certificate(subject, signing_certificate, signing_private_key, options)
+    end
+
+    private
+    def self.create_a_signed_certificate(subject, signing_certificate, signing_private_key, options = {})
+      options = DEFAULT_CERTIFICATE_OPTIONS.merge(options)
+
+      client_key = OpenSSL::PKey::RSA.new(options[:key_size], options[:exponent])
+
+      certificate_duration = Flores::Random.number(DEFAULT_CERTIFICATE_OPTIONS[:duration])
+
+      csr = Flores::PKI::CertificateSigningRequest.new
+      csr.start_time = Time.now
+      csr.expire_time = csr.start_time + certificate_duration
+      csr.public_key = client_key.public_key
+      csr.subject = subject
+      csr.signing_key = signing_private_key
+      csr.signing_certificate = signing_certificate
+      csr.want_signature_ability = options[:want_signature_ability]
+
+      [csr.create, client_key]
     end
   end
 end  # Flores::PKI
