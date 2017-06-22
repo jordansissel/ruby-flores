@@ -142,11 +142,6 @@ module Flores::PKI
       certificate.issuer = extensions.issuer_certificate.subject
       certificate.add_extension(extensions.create_extension("subjectKeyIdentifier", "hash", false))
 
-      # RFC 5280 4.2.1.1. Authority Key Identifier
-      # This is "who signed this key"
-      certificate.add_extension(extensions.create_extension("authorityKeyIdentifier", "keyid:always", false))
-      #certificate.add_extension(extensions.create_extension("authorityKeyIdentifier", "keyid:always,issuer:always", false))
-
       if want_signature_ability?
         # Create a CA.
         certificate.add_extension(extensions.create_extension("basicConstraints", "CA:TRUE", true))
