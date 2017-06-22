@@ -60,6 +60,107 @@ describe Flores::PKI::CertificateSigningRequest do
     end
     let(:certificate) { csr.create }
     it_behaves_like "a certificate"
+
+    it "validates" do
+      expect(certificate.verify(certificate.public_key)).to be_truthy
+    end
+  end
+
+  context "certificate signed by a single CA" do
+    let(:csr_ca) {Flores::PKI::CertificateSigningRequest.new}
+    let(:csr_server) {Flores::PKI::CertificateSigningRequest.new}
+    let(:ca_key) {OpenSSL::PKey::RSA.generate(key_bits, 65537)}
+    let(:ca_subject) {"CN=ca.example.com"}
+    let(:server_subject) {"CN=server.example.com"}
+
+    before do
+      #request signing cert (a self signed cert)
+      csr_ca.subject = ca_subject
+      csr_ca.public_key = ca_key.public_key
+      csr_ca.start_time = Time.now
+      csr_ca.expire_time = csr_ca.start_time + certificate_duration
+      csr_ca.signing_key = ca_key
+      csr_ca.want_signature_ability = true
+
+      #request the server cert
+      csr_server.subject = server_subject
+      csr_server.public_key = key.public_key
+      csr_server.start_time = Time.now
+      csr_server.expire_time = csr_server.start_time + certificate_duration
+      csr_server.signing_key = ca_key
+      csr_server.signing_certificate = ca_certificate
+    end
+    let(:certificate) {csr_server.create}
+    let(:ca_certificate) {csr_ca.create}
+
+    it_behaves_like "a certificate"
+
+    it "validates signatures" do
+      expect(ca_certificate.verify(ca_certificate.public_key)).to be_truthy
+      expect(certificate.verify(ca_certificate.public_key)).to be_truthy
+    end
+
+    it "validates certificate chain" do
+      store = OpenSSL::X509::Store.new
+      store.add_cert(ca_certificate)
+      expect(store.verify(certificate))
+    end
+  end
+
+  context "certificate signed by an intermediate CA" do
+    let(:csr_ca) {Flores::PKI::CertificateSigningRequest.new}
+    let(:csr_ca_intermediate) {Flores::PKI::CertificateSigningRequest.new}
+    let(:csr_server) {Flores::PKI::CertificateSigningRequest.new}
+    let(:ca_key) {OpenSSL::PKey::RSA.generate(key_bits, 65537)}
+    let(:ca_intermediate_key) {OpenSSL::PKey::RSA.generate(key_bits, 65537)}
+    let(:ca_subject) {"CN=ca.example.com"}
+    let(:ca_intermediate_subject) {"CN=intermediate.ca.example.com"}
+    let(:server_subject) {"CN=server.example.com"}
+
+    before do
+      #request the root signing cert (a self signed cert)
+      csr_ca.subject = ca_subject
+      csr_ca.public_key = ca_key.public_key
+      csr_ca.start_time = Time.now
+      csr_ca.expire_time = csr_ca.start_time + certificate_duration
+      csr_ca.signing_key = ca_key # <-- self signed
+      csr_ca.want_signature_ability = true
+
+      #request the intermediate signing cert
+      csr_ca_intermediate.subject = ca_intermediate_subject
+      csr_ca_intermediate.public_key = ca_intermediate_key.public_key
+      csr_ca_intermediate.start_time = Time.now
+      csr_ca_intermediate.expire_time = csr_ca_intermediate.start_time + certificate_duration
+      csr_ca_intermediate.signing_key = ca_key # <-- signed by root
+      csr_ca_intermediate.want_signature_ability = true
+      csr_ca_intermediate.signing_certificate = ca_certificate
+
+      #request the server cert
+      csr_server.subject = server_subject
+      csr_server.public_key = key.public_key
+      csr_server.start_time = Time.now
+      csr_server.expire_time = csr_server.start_time + certificate_duration
+      csr_server.signing_key = ca_intermediate_key #<-- signed by intermediate
+      csr_server.signing_certificate = ca_intermediate_certificate
+    end
+    let(:certificate) {csr_server.create}
+    let(:ca_certificate) {csr_ca.create}
+    let(:ca_intermediate_certificate) {csr_ca_intermediate.create}
+
+    it_behaves_like "a certificate"
+
+    it "validates signatures" do
+      expect(ca_certificate.verify(ca_certificate.public_key)).to be_truthy
+      expect(ca_intermediate_certificate.verify(ca_certificate.public_key)).to be_truthy
+      expect(certificate.verify(ca_intermediate_certificate.public_key)).to be_truthy
+    end
+
+    it "validates certificate chain" do
+      store = OpenSSL::X509::Store.new
+      store.add_cert(ca_certificate)
+      store.add_cert(ca_intermediate_certificate)
+      expect(store.verify(certificate)).to be_truthy
+    end
   end
 end
 
